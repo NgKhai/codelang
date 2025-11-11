@@ -3,7 +3,7 @@ import 'package:codelang/style/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import 'bussiness/cubit/theme_cubit.dart';
+import 'business/cubit/theme_cubit.dart';
 import 'data/services/theme_service.dart';
 
 void main() {

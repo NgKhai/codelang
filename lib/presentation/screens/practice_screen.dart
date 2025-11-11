@@ -3,9 +3,10 @@ import 'package:codelang/presentation/widgets/flash_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../bussiness/bloc/flash_card/flash_card_bloc.dart';
-import '../../bussiness/bloc/flash_card/flash_card_event.dart';
-import '../../bussiness/bloc/flash_card/flash_card_state.dart';
+import '../../business/bloc/flash_card/flash_card_bloc.dart';
+import '../../business/bloc/flash_card/flash_card_event.dart';
+import '../../business/bloc/flash_card/flash_card_state.dart';
+import '../../data/services/tts_service.dart';
 import '../../style/custom_app_bar.dart';
 
 class PracticeScreen extends StatelessWidget {
@@ -16,6 +17,7 @@ class PracticeScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => FlashCardBloc(
         flashCardService: FlashCardService(),
+        ttsService: TtsService(),
       )..add(const LoadFlashCards()),
       child: const PracticeScreenView(),
     );
@@ -61,7 +63,6 @@ class _PracticeScreenViewState extends State<PracticeScreenView> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBarStyles.practice(
-
         onFilterPressed: () {
           // TODO: Implement filter functionality
           ScaffoldMessenger.of(context).showSnackBar(
@@ -92,7 +93,7 @@ class _PracticeScreenViewState extends State<PracticeScreenView> {
                     const Icon(Icons.error_outline, size: 48, color: Colors.red),
                     const SizedBox(height: 16),
                     Text(
-                      'Failed to load practice',
+                      'Failed to load flash cards',
                       style: Theme.of(context).textTheme.titleLarge,
                     ),
                     const SizedBox(height: 8),

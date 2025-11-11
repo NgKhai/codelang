@@ -9,6 +9,8 @@ class FlashCardState extends Equatable {
   final bool hasReachedMax;
   final int currentPage;
   final String? errorMessage;
+  final bool isSpeaking;
+  final String? speakingWord;
 
   const FlashCardState({
     this.status = FlashCardStatus.initial,
@@ -16,6 +18,8 @@ class FlashCardState extends Equatable {
     this.hasReachedMax = false,
     this.currentPage = 0,
     this.errorMessage,
+    this.isSpeaking = false,
+    this.speakingWord,
   });
 
   FlashCardState copyWith({
@@ -24,6 +28,8 @@ class FlashCardState extends Equatable {
     bool? hasReachedMax,
     int? currentPage,
     String? errorMessage,
+    bool? isSpeaking,
+    String? speakingWord,
   }) {
     return FlashCardState(
       status: status ?? this.status,
@@ -31,6 +37,8 @@ class FlashCardState extends Equatable {
       hasReachedMax: hasReachedMax ?? this.hasReachedMax,
       currentPage: currentPage ?? this.currentPage,
       errorMessage: errorMessage ?? this.errorMessage,
+      isSpeaking: isSpeaking ?? this.isSpeaking,
+      speakingWord: speakingWord ?? this.speakingWord,
     );
   }
 
@@ -41,5 +49,7 @@ class FlashCardState extends Equatable {
     hasReachedMax,
     currentPage,
     errorMessage,
+    isSpeaking,
+    speakingWord,
   ];
 }

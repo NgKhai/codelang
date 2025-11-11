@@ -18,3 +18,22 @@ class LoadMoreFlashCards extends FlashCardEvent {
 class RefreshFlashCards extends FlashCardEvent {
   const RefreshFlashCards();
 }
+
+class SpeakFlashCardWord extends FlashCardEvent {
+  final String word;
+  final String? language;
+  final double? speechRate;
+
+  const SpeakFlashCardWord({
+    required this.word,
+    this.language,
+    this.speechRate,
+  });
+
+  @override
+  List<Object?> get props => [word, language, speechRate];
+}
+
+class StopSpeaking extends FlashCardEvent {
+  const StopSpeaking();
+}

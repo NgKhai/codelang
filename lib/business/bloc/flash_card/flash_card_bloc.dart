@@ -1,18 +1,23 @@
-
-
+import 'package:codelang/data/services/flash_card_service.dart';
+import 'package:codelang/data/services/tts_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/services/flash_card_service.dart';
 import 'flash_card_event.dart';
 import 'flash_card_state.dart';
 
 class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
   final FlashCardService flashCardService;
+  final TtsService ttsService;
 
-  FlashCardBloc({required this.flashCardService}) : super(const FlashCardState()) {
+  FlashCardBloc({
+    required this.flashCardService,
+    required this.ttsService,
+  }) : super(const FlashCardState()) {
     on<LoadFlashCards>(_onLoadFlashCards);
     on<LoadMoreFlashCards>(_onLoadMoreFlashCards);
     on<RefreshFlashCards>(_onRefreshFlashCards);
+    on<SpeakFlashCardWord>(_onSpeakFlashCardWord);
+    on<StopSpeaking>(_onStopSpeaking);
   }
 
   /// Handles initial loading of flash cards
@@ -99,5 +104,59 @@ class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
         errorMessage: error.toString(),
       ));
     }
+  }
+
+  /// Handles speaking a flash card word
+  Future<void> _onSpeakFlashCardWord(
+      SpeakFlashCardWord event,
+      Emitter<FlashCardState> emit,
+      ) async {
+    // Don't speak if already speaking
+    if (state.isSpeaking) return;
+
+    emit(state.copyWith(
+      isSpeaking: true,
+      speakingWord: event.word,
+    ));
+
+    try {
+      await ttsService.speakWithSettings(
+        word: event.word,
+        language: event.language ?? TtsLanguages.englishUS,
+        speechRate: event.speechRate ?? TtsSpeechRates.normal,
+      );
+
+      // Wait a bit before resetting to give visual feedback
+      await Future.delayed(const Duration(milliseconds: 500));
+
+      emit(state.copyWith(
+        isSpeaking: false,
+        speakingWord: null,
+      ));
+    } catch (error) {
+      print('Error speaking word: $error');
+      emit(state.copyWith(
+        isSpeaking: false,
+        speakingWord: null,
+      ));
+    }
+  }
+
+  /// Handles stopping speech
+  Future<void> _onStopSpeaking(
+      StopSpeaking event,
+      Emitter<FlashCardState> emit,
+      ) async {
+    await ttsService.stop();
+    emit(state.copyWith(
+      isSpeaking: false,
+      speakingWord: null,
+    ));
+  }
+
+  @override
+  Future<void> close() {
+    ttsService.dispose();
+    return super.close();
   }
 }

@@ -1,9 +1,10 @@
 import 'package:codelang/presentation/screens/practice_screen.dart';
+import 'package:codelang/presentation/screens/sentence_reorder_screen.dart';
 import 'package:codelang/presentation/screens/test_screen_2.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../bussiness/cubit/theme_cubit.dart';
+import '../../business/cubit/theme_cubit.dart';
 import 'test_screen.dart';
 
 class MainScreen extends StatefulWidget {
@@ -53,6 +54,16 @@ class _MainScreenState extends State<MainScreen> {
                 );
               },
               child: Text('Test Screen 2'),
+            ),
+            SizedBox(height: 20),
+            TextButton(
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => SentenceReorderScreen()),
+                );
+              },
+              child: Text('Sentence Reorder Screen'),
             ),
             ElevatedButton(
               onPressed: () {
