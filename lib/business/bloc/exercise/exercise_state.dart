@@ -1,10 +1,9 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../data/models/exercise.dart';
+import '../../../data/models/exercise/reorder_exercise.dart';
+import '../shared/feedback_type.dart';
 
 enum ExerciseStatus { initial, loading, loaded, checking, correct, incorrect, completed }
-
-enum FeedbackType { initial, info, warning, error, success }
 
 class ExerciseState extends Equatable {
   final ExerciseStatus status;

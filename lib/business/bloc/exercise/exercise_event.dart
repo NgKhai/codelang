@@ -1,6 +1,6 @@
 import 'package:equatable/equatable.dart';
 
-import '../../../data/models/exercise.dart';
+import '../../../data/models/exercise/reorder_exercise.dart';
 
 abstract class ExerciseEvent extends Equatable {
   const ExerciseEvent();

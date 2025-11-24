@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:go_router/go_router.dart';
 
 class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
   final String title;
@@ -36,7 +37,7 @@ class CustomAppBar extends StatelessWidget implements PreferredSizeWidget {
           Icons.arrow_back_ios,
           color: isDark ? theme.colorScheme.onSurface : Colors.white,
         ),
-        onPressed: onLeadingIconPressed,
+        onPressed: () => onLeadingIconPressed?.call(),
       )
           : null)
           : null,
@@ -188,10 +189,9 @@ class AppBarStyles {
     VoidCallback? onSearchPressed,
   }) {
     return CustomAppBar(
-      title: 'Practice',
+      title: 'Flashcard',
       subtitle: 'Learn with flashcards',
-      leadingIcon: Icons.school_rounded,
-      showBackButton: true,
+      leadingIcon: Icons.style,
       actions: [
         if (onFilterPressed != null)
           AppBarActionButton(
@@ -312,35 +312,35 @@ class AppBarStyles {
     );
   }
 }
-
-// Extension for theme-aware colors
-extension ThemeHelpers on ThemeData {
-  /// Get appropriate app bar gradient colors based on theme
-  List<Color> get appBarGradientColors {
-    if (brightness == Brightness.dark) {
-      return [
-        colorScheme.surface,
-        colorScheme.surface.withOpacity(0.95),
-      ];
-    } else {
-      return [
-        colorScheme.primary,
-        colorScheme.primary.withOpacity(0.8),
-      ];
-    }
-  }
-
-  /// Get appropriate text color for app bar
-  Color get appBarTextColor {
-    return brightness == Brightness.dark
-        ? colorScheme.onSurface
-        : Colors.white;
-  }
-
-  /// Get appropriate icon color for app bar
-  Color get appBarIconColor {
-    return brightness == Brightness.dark
-        ? colorScheme.onSurface
-        : Colors.white;
-  }
-}
+//
+// // Extension for theme-aware colors
+// extension ThemeHelpers on ThemeData {
+//   /// Get appropriate app bar gradient colors based on theme
+//   List<Color> get appBarGradientColors {
+//     if (brightness == Brightness.dark) {
+//       return [
+//         colorScheme.surface,
+//         colorScheme.surface.withOpacity(0.95),
+//       ];
+//     } else {
+//       return [
+//         colorScheme.primary,
+//         colorScheme.primary.withOpacity(0.8),
+//       ];
+//     }
+//   }
+//
+//   /// Get appropriate text color for app bar
+//   Color get appBarTextColor {
+//     return brightness == Brightness.dark
+//         ? colorScheme.onSurface
+//         : Colors.white;
+//   }
+//
+//   /// Get appropriate icon color for app bar
+//   Color get appBarIconColor {
+//     return brightness == Brightness.dark
+//         ? colorScheme.onSurface
+//         : Colors.white;
+//   }
+// }

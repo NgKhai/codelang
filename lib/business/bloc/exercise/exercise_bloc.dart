@@ -1,7 +1,8 @@
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../../data/models/exercise.dart';
+import '../../../data/models/exercise/reorder_exercise.dart';
 import '../../../data/services/exercise_service.dart';
+import '../shared/feedback_type.dart';
 import 'exercise_event.dart';
 import 'exercise_state.dart';
 

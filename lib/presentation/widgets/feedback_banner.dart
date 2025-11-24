@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../business/bloc/exercise/exercise_state.dart';
+import '../../business/bloc/shared/feedback_type.dart';
 import '../../style/app_colors.dart';
 
 

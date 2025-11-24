@@ -46,6 +46,7 @@ class FlashCardService {
         'Learning Flutter allows you to build beautiful UIs like this card for word #$number.',
         flashCardExampleTranslation:
         '(Học Flutter giúp bạn xây dựng giao diện đẹp như thẻ này cho từ #$number)',
+        practiceType: '',
       );
     });
   }
@@ -71,6 +72,7 @@ class FlashCardService {
       'Learning Flutter allows you to build beautiful UIs like this card for word #$id.',
       flashCardExampleTranslation:
       '(Học Flutter giúp bạn xây dựng giao diện đẹp như thẻ này cho từ #$id)',
+      practiceType: ''
     );
   }
 }

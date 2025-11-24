@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 import '../../business/bloc/exercise/exercise_bloc.dart';
 import '../../business/bloc/exercise/exercise_event.dart';
 import '../../business/bloc/exercise/exercise_state.dart';
@@ -10,8 +11,8 @@ import '../widgets/available_word_widget.dart';
 import '../widgets/drop_slot_widget.dart';
 import '../widgets/feedback_banner.dart';
 
-class SentenceReorderScreen extends StatelessWidget {
-  const SentenceReorderScreen({super.key});
+class ExerciseScreen extends StatelessWidget {
+  const ExerciseScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -25,71 +26,103 @@ class SentenceReorderScreen extends StatelessWidget {
 class _SentenceReorderView extends StatelessWidget {
   const _SentenceReorderView();
 
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: CustomAppBar(
-        title: 'Practice',
-        subtitle: 'Sentence Reorder',
-        leadingIcon: Icons.school_rounded,
-        showBackButton: true,
+  Future<bool> _showBackDialog(BuildContext context) async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Confirm Exit'),
+        content: const Text('Are you sure you want to go back?'),
         actions: [
-          AppBarActionButton(
-            icon: Icons.help_outline_rounded,
-            tooltip: 'Help',
-            onPressed: () {
-              _showHelpDialog(context);
-            },
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            child: const Text('Go Back'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Stay'),
           ),
         ],
       ),
-      body: BlocBuilder<ExerciseBloc, ExerciseState>(
-        builder: (context, state) {
-          if (state.status == ExerciseStatus.loading) {
-            return const Center(
-              child: CircularProgressIndicator(),
-            );
-          }
+    );
+    return result ?? false;
+  }
 
-          if (state.status == ExerciseStatus.initial || state.currentExercise == null) {
-            return const Center(
-              child: Text('No exercises available'),
-            );
-          }
+  @override
+  Widget build(BuildContext context) {
+    return PopScope(
+      canPop: false,
+      onPopInvokedWithResult: (didPop, result) async {
+        if (didPop) return;
 
-          return Column(
-            children: [
-              // Progress indicator
-              _buildProgressIndicator(context, state),
-
-              // Main content area (scrollable)
-              Expanded(
-                child: SingleChildScrollView(
-                  padding: const EdgeInsets.all(16),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.stretch,
-                    children: [
-                      // Exercise prompt card
-                      _buildPromptCard(state),
-                      const SizedBox(height: 20),
-
-                      // Drop zone
-                      _buildDropZone(context, state),
-                      const SizedBox(height: 24),
-
-                      // Available words
-                      _buildAvailableWords(context, state),
-                      const SizedBox(height: 80), // Space for bottom bar
-                    ],
+        final shouldPop = await _showBackDialog(context);
+        if (shouldPop && context.mounted) {
+          context.pop();
+        }
+      },
+      child: Scaffold(
+        appBar: CustomAppBar(
+          title: 'Practice',
+          subtitle: 'Sentence Reorder',
+          leadingIcon: Icons.school_rounded,
+          showBackButton: true,
+          actions: [
+            AppBarActionButton(
+              icon: Icons.help_outline_rounded,
+              tooltip: 'Help',
+              onPressed: () {
+                _showHelpDialog(context);
+              },
+            ),
+          ],
+        ),
+        body: BlocBuilder<ExerciseBloc, ExerciseState>(
+          builder: (context, state) {
+            if (state.status == ExerciseStatus.loading) {
+              return const Center(
+                child: CircularProgressIndicator(),
+              );
+            }
+      
+            if (state.status == ExerciseStatus.initial || state.currentExercise == null) {
+              return const Center(
+                child: Text('No exercises available'),
+              );
+            }
+      
+            return Column(
+              children: [
+                // Progress indicator
+                _buildProgressIndicator(context, state),
+      
+                // Main content area (scrollable)
+                Expanded(
+                  child: SingleChildScrollView(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.stretch,
+                      children: [
+                        // Exercise prompt card
+                        _buildPromptCard(state),
+                        const SizedBox(height: 20),
+      
+                        // Drop zone
+                        _buildDropZone(context, state),
+                        const SizedBox(height: 24),
+      
+                        // Available words
+                        _buildAvailableWords(context, state),
+                        const SizedBox(height: 80), // Space for bottom bar
+                      ],
+                    ),
                   ),
                 ),
-              ),
-
-              // Bottom action bar (fixed)
-              _buildBottomBar(context, state),
-            ],
-          );
-        },
+      
+                // Bottom action bar (fixed)
+                _buildBottomBar(context, state),
+              ],
+            );
+          },
+        ),
       ),
     );
   }
@@ -448,7 +481,7 @@ class _SentenceReorderView extends StatelessWidget {
           children: [
             Icon(Icons.help_outline_rounded, color: AppColors.primary),
             const SizedBox(width: 12),
-            const Text('How to Play'),
+            const Text('How to Use'),
           ],
         ),
         content: Column(

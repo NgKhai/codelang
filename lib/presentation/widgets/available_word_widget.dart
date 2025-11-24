@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../data/models/exercise.dart';
+import '../../data/models/exercise/reorder_exercise.dart';
 import '../../style/app_colors.dart';
 
 class AvailableWordWidget extends StatelessWidget {

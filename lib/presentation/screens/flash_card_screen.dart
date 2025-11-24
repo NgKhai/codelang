@@ -9,8 +9,8 @@ import '../../business/bloc/flash_card/flash_card_state.dart';
 import '../../data/services/tts_service.dart';
 import '../../style/custom_app_bar.dart';
 
-class PracticeScreen extends StatelessWidget {
-  const PracticeScreen({super.key});
+class FlashCardScreen extends StatelessWidget {
+  const FlashCardScreen({super.key});
 
   @override
   Widget build(BuildContext context) {
