@@ -21,20 +21,25 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       AuthCheckRequested event,
       Emitter<AuthState> emit,
       ) async {
+    print('🔄 AuthCheckRequested event received');
     emit(AuthLoading());
     try {
       final isLoggedIn = await _authRepository.isLoggedIn();
       if (isLoggedIn) {
         final user = await _authRepository.getCurrentUser();
         if (user != null) {
+          print('✅ Auth check complete: User authenticated - ${user.email}');
           emit(AuthAuthenticated(user));
         } else {
+          print('⚠️ Auth check complete: No user data found');
           emit(AuthUnauthenticated());
         }
       } else {
+        print('ℹ️ Auth check complete: User not logged in');
         emit(AuthUnauthenticated());
       }
     } catch (e) {
+      print('❌ Auth check error: $e');
       emit(AuthUnauthenticated());
     }
   }

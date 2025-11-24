@@ -23,6 +23,7 @@ class AuthRepository {
     String? name,
   }) async {
     try {
+      print('📝 Attempting registration for: $email');
       final userData = await _mongoService.registerUser(
         email: email,
         password: password,
@@ -35,8 +36,10 @@ class AuthRepository {
 
       final user = UserModel.fromJson(userData);
       await _saveUserSession(user.id);
+      print('✅ Registration successful, saved session for user: ${user.id}');
       return user;
     } catch (e) {
+      print('❌ Registration error: $e');
       throw Exception('Registration failed: ${e.toString()}');
     }
   }
@@ -47,6 +50,7 @@ class AuthRepository {
     required String password,
   }) async {
     try {
+      print('🔐 Attempting login for: $email');
       final userData = await _mongoService.loginUser(
         email: email,
         password: password,
@@ -58,8 +62,10 @@ class AuthRepository {
 
       final user = UserModel.fromJson(userData);
       await _saveUserSession(user.id);
+      print('✅ Login successful, saved session for user: ${user.id}');
       return user;
     } catch (e) {
+      print('❌ Login error: $e');
       throw Exception('Login failed: ${e.toString()}');
     }
   }
@@ -86,8 +92,10 @@ class AuthRepository {
 
       final user = UserModel.fromJson(userData);
       await _saveUserSession(user.id);
+      print('✅ Google login successful, saved session for user: ${user.id}');
       return user;
     } catch (e) {
+      print('❌ Google login error: $e');
       throw Exception('Google login failed: ${e.toString()}');
     }
   }
@@ -96,12 +104,15 @@ class AuthRepository {
   Future<void> logout() async {
     await _secureStorage.delete(key: 'userId');
     await _googleSignIn.signOut();
+    print('👋 Logged out, cleared session');
   }
 
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
     final userId = await _secureStorage.read(key: 'userId');
-    return userId != null && userId.isNotEmpty;
+    final isLoggedIn = userId != null && userId.isNotEmpty;
+    print('🔍 Auth check: userId=${userId ?? "null"}, isLoggedIn=$isLoggedIn');
+    return isLoggedIn;
   }
 
   // Get current user
@@ -109,16 +120,21 @@ class AuthRepository {
     try {
       final userId = await _secureStorage.read(key: 'userId');
       if (userId == null || userId.isEmpty) {
+        print('⚠️ getCurrentUser: No userId found in storage');
         return null;
       }
 
+      print('🔍 Fetching user data for userId: $userId');
       final userData = await _mongoService.getUserById(userId);
       if (userData == null) {
+        print('⚠️ getCurrentUser: No user found in DB for userId: $userId');
         return null;
       }
 
+      print('✅ getCurrentUser: User found - ${userData['email']}');
       return UserModel.fromJson(userData);
     } catch (e) {
+      print('❌ getCurrentUser error: $e');
       return null;
     }
   }
@@ -126,5 +142,6 @@ class AuthRepository {
   // Save user session
   Future<void> _saveUserSession(String userId) async {
     await _secureStorage.write(key: 'userId', value: userId);
+    print('💾 Saved session for userId: $userId');
   }
 }

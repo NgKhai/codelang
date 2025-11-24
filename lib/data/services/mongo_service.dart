@@ -114,7 +114,7 @@ class MongoService {
       }
 
       user.remove('password'); // Don't return password
-      user['_id'] = user['_id'].toString();
+      user['_id'] = (user['_id'] as ObjectId).toHexString();
 
       return user;
     } catch (e) {
@@ -140,7 +140,9 @@ class MongoService {
 
       if (user == null) {
         // Create new user
+        final objectId = ObjectId();
         user = {
+          '_id': objectId,
           'email': email.toLowerCase(),
           'name': name,
           'photoUrl': photoUrl,
@@ -149,13 +151,16 @@ class MongoService {
           'createdAt': DateTime.now().toIso8601String(),
         };
 
-        final result = await _usersCollection!.insertOne(user);
-        user['_id'] = result.id.toString();
+        await _usersCollection!.insertOne(user);
+        user['_id'] = objectId.toHexString();
       } else {
+        // Store the ObjectId before converting
+        final userId = (user['_id'] as ObjectId).toHexString();
+        user['_id'] = userId;
+        
         // Update existing user info
-        user['_id'] = user['_id'].toString();
         await _usersCollection!.update(
-          where.eq('_id', ObjectId.fromHexString(user['_id'])),
+          where.eq('_id', ObjectId.fromHexString(userId)),
           modify.set('photoUrl', photoUrl).set('name', name),
         );
       }
@@ -178,7 +183,7 @@ class MongoService {
 
       if (user != null) {
         user.remove('password');
-        user['_id'] = user['_id'].toString();
+        user['_id'] = (user['_id'] as ObjectId).toHexString();
       }
 
       return user;
