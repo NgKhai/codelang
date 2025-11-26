@@ -35,7 +35,7 @@
 
 1.  **Clone the repository**
     ```bash
-    git clone https://github.com/yourusername/codelang.git
+    git clone https://github.com/NgKhai/codelang.git
     cd codelang
     ```
 
