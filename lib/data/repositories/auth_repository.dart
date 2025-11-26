@@ -144,4 +144,30 @@ class AuthRepository {
     await _secureStorage.write(key: 'userId', value: userId);
     print('💾 Saved session for userId: $userId');
   }
+
+  // Update user's name
+  Future<UserModel> updateUserName(String newName) async {
+    try {
+      final userId = await _secureStorage.read(key: 'userId');
+      if (userId == null || userId.isEmpty) {
+        throw Exception('No user session found');
+      }
+
+      print('📝 Updating name for user: $userId to: $newName');
+      final userData = await _mongoService.updateUserName(
+        userId: userId,
+        newName: newName,
+      );
+
+      if (userData == null) {
+        throw Exception('Failed to update user name');
+      }
+
+      print('✅ Name updated successfully');
+      return UserModel.fromJson(userData);
+    } catch (e) {
+      print('❌ Update name error: $e');
+      throw Exception('Failed to update name: ${e.toString()}');
+    }
+  }
 }

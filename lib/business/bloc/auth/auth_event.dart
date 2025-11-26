@@ -40,3 +40,12 @@ class AuthRegisterRequested extends AuthEvent {
 class AuthGoogleLoginRequested extends AuthEvent {}
 
 class AuthLogoutRequested extends AuthEvent {}
+
+class AuthUpdateNameRequested extends AuthEvent {
+  final String newName;
+
+  const AuthUpdateNameRequested({required this.newName});
+
+  @override
+  List<Object?> get props => [newName];
+}

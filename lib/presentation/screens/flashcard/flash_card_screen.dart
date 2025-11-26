@@ -3,12 +3,12 @@ import 'package:codelang/presentation/widgets/flash_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../../business/bloc/flash_card/flash_card_bloc.dart';
-import '../../business/bloc/flash_card/flash_card_event.dart';
-import '../../business/bloc/flash_card/flash_card_state.dart';
-import '../../data/services/tts_service.dart';
-import '../../style/app_colors.dart';
-import '../../style/custom_app_bar.dart';
+import '../../../business/bloc/flash_card/flash_card_bloc.dart';
+import '../../../business/bloc/flash_card/flash_card_event.dart';
+import '../../../business/bloc/flash_card/flash_card_state.dart';
+import '../../../data/services/tts_service.dart';
+import '../../../style/app_colors.dart';
+import '../../../style/custom_app_bar.dart';
 
 class FlashCardScreen extends StatelessWidget {
   const FlashCardScreen({super.key});

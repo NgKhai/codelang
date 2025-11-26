@@ -1,6 +1,5 @@
 // // import 'package:codelang/presentation/screens/exercise_screen.dart';
 // // import 'package:codelang/presentation/screens/flash_card_screen.dart';
-// // import 'package:codelang/presentation/screens/list_exercise_screen.dart';
 // // import 'package:codelang/presentation/screens/test_screen.dart';
 // // import 'package:codelang/presentation/screens/unified_exercise_screen.dart';
 // // import 'package:flutter/material.dart';
@@ -118,17 +117,17 @@
 // lib/style/app_router.dart
 
 import 'dart:async';
-import 'package:codelang/presentation/screens/flash_card_screen.dart';
-import 'package:codelang/presentation/screens/home_screen.dart';
+import 'package:codelang/presentation/screens/flashcard/flash_card_screen.dart';
+import 'package:codelang/presentation/screens/home/home_screen.dart';
 import 'package:codelang/presentation/screens/login_screen.dart';
 import 'package:codelang/presentation/screens/register_screen.dart';
-import 'package:codelang/presentation/screens/unified_exercise_screen.dart';
+import 'package:codelang/presentation/screens/home/unified_exercise_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 import '../business/bloc/auth/auth_bloc.dart';
 import '../business/bloc/auth/auth_state.dart';
 import '../presentation/screens/main_screen.dart';
-import '../presentation/screens/profile_screen.dart';
+import '../presentation/screens/profile/profile_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');

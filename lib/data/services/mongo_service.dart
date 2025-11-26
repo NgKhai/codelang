@@ -192,4 +192,26 @@ class MongoService {
       return null;
     }
   }
+
+  // Update user's name
+  Future<Map<String, dynamic>?> updateUserName({
+    required String userId,
+    required String newName,
+  }) async {
+    try {
+      await connect();
+      
+      // Update the user's name
+      await _usersCollection!.update(
+        where.eq('_id', ObjectId.fromHexString(userId)),
+        modify.set('name', newName),
+      );
+
+      // Get and return the updated user
+      return await getUserById(userId);
+    } catch (e) {
+      print('Update user name error: $e');
+      rethrow;
+    }
+  }
 }

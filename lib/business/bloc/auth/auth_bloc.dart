@@ -15,6 +15,7 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
     on<AuthGoogleLoginRequested>(_onAuthGoogleLoginRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
+    on<AuthUpdateNameRequested>(_onAuthUpdateNameRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -103,6 +104,30 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
       emit(AuthUnauthenticated());
     } catch (e) {
       emit(AuthError(e.toString()));
+    }
+  }
+
+  Future<void> _onAuthUpdateNameRequested(
+      AuthUpdateNameRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    try {
+      // Get current state
+      final currentState = state;
+      if (currentState is! AuthAuthenticated) {
+        emit(AuthError('User not authenticated'));
+        return;
+      }
+
+      final updatedUser = await _authRepository.updateUserName(event.newName);
+      emit(AuthAuthenticated(updatedUser));
+    } catch (e) {
+      emit(AuthError(e.toString()));
+      // Re-emit the current state if available
+      final currentState = state;
+      if (currentState is AuthAuthenticated) {
+        emit(AuthAuthenticated(currentState.user));
+      }
     }
   }
 }
