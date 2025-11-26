@@ -2,6 +2,8 @@
 
 **CodeLang** is a specialized cross-platform application (Mobile/Web) designed to enhance technical English proficiency for developers. It helps users learn and practice English vocabulary and concepts specifically tailored for the software development industry.
 
+<img src="https://github.com/user-attachments/assets/5c8c1f18-8b3c-48c9-aa14-f34cc3097a83"/>
+
 ## ✨ Features
 
 -   **Authentication**: Secure Login and Registration system.
