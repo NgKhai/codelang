@@ -187,11 +187,15 @@ class AppBarStyles {
   static CustomAppBar practice({
     VoidCallback? onFilterPressed,
     VoidCallback? onSearchPressed,
+    VoidCallback? onLeadingIconPressed,
+    bool showBackButton = false,
   }) {
     return CustomAppBar(
       title: 'Flashcard',
       subtitle: 'Learn with flashcards',
       leadingIcon: Icons.style,
+      showBackButton: showBackButton,
+      onLeadingIconPressed: onLeadingIconPressed,
       actions: [
         if (onFilterPressed != null)
           AppBarActionButton(

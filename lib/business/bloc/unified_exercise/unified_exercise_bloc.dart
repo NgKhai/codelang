@@ -32,24 +32,32 @@ class UnifiedExerciseBloc extends Bloc<UnifiedExerciseEvent, UnifiedExerciseStat
     on<ShowAnswer>(_onShowAnswer);
   }
 
-  void _onLoadExercises(LoadUnifiedExercises event, Emitter<UnifiedExerciseState> emit) {
+  Future<void> _onLoadExercises(LoadUnifiedExercises event, Emitter<UnifiedExerciseState> emit) async {
     emit(state.copyWith(status: UnifiedExerciseStatus.loading));
 
-    // Get exercises either by set ID or random
-    final exercises = event.exerciseSetId != null && event.exerciseSetId != 'random'
-        ? UnifiedExerciseService.getExercisesBySetId(event.exerciseSetId!)
-        : UnifiedExerciseService.getRandomExercises(count: event.count);
+    try {
+      // Get exercises either by set ID or random
+      final exercises = event.exerciseSetId != null && event.exerciseSetId != 'random'
+          ? await UnifiedExerciseService.getExercisesBySetId(event.exerciseSetId!)
+          : await UnifiedExerciseService.getRandomExercises(count: event.count);
 
-    if (exercises.isEmpty) {
+      if (exercises.isEmpty) {
+        emit(state.copyWith(
+          status: UnifiedExerciseStatus.loaded,
+          feedbackMessage: 'No exercises available.',
+          feedbackType: FeedbackType.error,
+        ));
+        return;
+      }
+
+      _loadExerciseAtIndex(0, exercises, emit);
+    } catch (e) {
       emit(state.copyWith(
         status: UnifiedExerciseStatus.loaded,
-        feedbackMessage: 'No exercises available.',
+        feedbackMessage: 'Failed to load exercises: $e',
         feedbackType: FeedbackType.error,
       ));
-      return;
     }
-
-    _loadExerciseAtIndex(0, exercises, emit);
   }
 
   void _loadExerciseAtIndex(int index, List<UnifiedExercise> exercises, Emitter<UnifiedExerciseState> emit) {

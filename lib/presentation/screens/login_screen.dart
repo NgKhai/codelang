@@ -42,9 +42,6 @@ class _LoginScreenState extends State<LoginScreen> {
     }
   }
 
-  void _handleGoogleLogin() {
-    context.read<AuthBloc>().add(AuthGoogleLoginRequested());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -237,67 +234,6 @@ class _LoginScreenState extends State<LoginScreen> {
                               : const Text(
                             'Sign In',
                             style: AppStyles.buttonText,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSizes.p24),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSizes.p24),
-
-                      // Google Sign In Button
-                      SizedBox(
-                        height: AppSizes.buttonHeight,
-                        child: OutlinedButton.icon(
-                          onPressed: isLoading ? null : _handleGoogleLogin,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
-                            side: BorderSide(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.3)
-                                  : AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-                            ),
-                          ),
-                          icon: Image.asset(
-                            'assets/images/google_logo.png',
-                            height: 24,
-                            width: 24,
-                            errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.g_mobiledata, size: 24),
-                          ),
-                          label: const Text(
-                            'Continue with Google',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
                           ),
                         ),
                       ),

@@ -37,8 +37,6 @@ class AuthRegisterRequested extends AuthEvent {
   List<Object?> get props => [email, password, name];
 }
 
-class AuthGoogleLoginRequested extends AuthEvent {}
-
 class AuthLogoutRequested extends AuthEvent {}
 
 class AuthUpdateNameRequested extends AuthEvent {
@@ -48,4 +46,15 @@ class AuthUpdateNameRequested extends AuthEvent {
 
   @override
   List<Object?> get props => [newName];
+}
+
+class AuthCompleteStreakRequested extends AuthEvent {}
+
+class AuthCompleteCourseRequested extends AuthEvent {
+  final String courseId;
+
+  const AuthCompleteCourseRequested({required this.courseId});
+
+  @override
+  List<Object?> get props => [courseId];
 }

@@ -8,7 +8,12 @@ abstract class FlashCardEvent extends Equatable {
 }
 
 class LoadFlashCards extends FlashCardEvent {
-  const LoadFlashCards();
+  final String? deckId;
+
+  const LoadFlashCards({this.deckId});
+
+  @override
+  List<Object?> get props => [deckId];
 }
 
 class LoadMoreFlashCards extends FlashCardEvent {

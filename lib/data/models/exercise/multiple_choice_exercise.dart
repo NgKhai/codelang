@@ -21,6 +21,20 @@ class MultipleChoiceExercise {
     this.practiceType,
   });
 
+  factory MultipleChoiceExercise.fromJson(Map<String, dynamic> json) {
+    return MultipleChoiceExercise(
+      prompt: json['prompt'] as String,
+      sentence: json['sentence'] as String,
+      blankWord: json['blankWord'] as String,
+      blankPosition: json['blankPosition'] as int,
+      options: List<String>.from(json['options'] as List),
+      correctOptionIndex: json['correctOptionIndex'] as int,
+      imageUrl: json['imageUrl'] as String?,
+      definition: json['definition'] as String?,
+      practiceType: json['practiceType'] as String?,
+    );
+  }
+
   // Get the sentence with blank replaced by "_____"
   String getSentenceWithBlank() {
     final words = sentence.split(' ');

@@ -13,9 +13,10 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthCheckRequested>(_onAuthCheckRequested);
     on<AuthLoginRequested>(_onAuthLoginRequested);
     on<AuthRegisterRequested>(_onAuthRegisterRequested);
-    on<AuthGoogleLoginRequested>(_onAuthGoogleLoginRequested);
     on<AuthLogoutRequested>(_onAuthLogoutRequested);
     on<AuthUpdateNameRequested>(_onAuthUpdateNameRequested);
+    on<AuthCompleteStreakRequested>(_onAuthCompleteStreakRequested);
+    on<AuthCompleteCourseRequested>(_onAuthCompleteCourseRequested);
   }
 
   Future<void> _onAuthCheckRequested(
@@ -80,20 +81,6 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     }
   }
 
-  Future<void> _onAuthGoogleLoginRequested(
-      AuthGoogleLoginRequested event,
-      Emitter<AuthState> emit,
-      ) async {
-    emit(AuthLoading());
-    try {
-      final user = await _authRepository.loginWithGoogle();
-      emit(AuthAuthenticated(user));
-    } catch (e) {
-      emit(AuthError(e.toString()));
-      emit(AuthUnauthenticated());
-    }
-  }
-
   Future<void> _onAuthLogoutRequested(
       AuthLogoutRequested event,
       Emitter<AuthState> emit,
@@ -124,6 +111,51 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     } catch (e) {
       emit(AuthError(e.toString()));
       // Re-emit the current state if available
+      final currentState = state;
+      if (currentState is AuthAuthenticated) {
+        emit(AuthAuthenticated(currentState.user));
+      }
+    }
+  }
+
+  Future<void> _onAuthCompleteStreakRequested(
+      AuthCompleteStreakRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    try {
+      final currentState = state;
+      if (currentState is! AuthAuthenticated) {
+        print('⚠️ Cannot complete streak: User not authenticated');
+        return;
+      }
+
+      final updatedUser = await _authRepository.completeStreak();
+      emit(AuthAuthenticated(updatedUser));
+    } catch (e) {
+      print('❌ Complete streak error: $e');
+      // Don't emit error state, just keep the current authenticated state
+      final currentState = state;
+      if (currentState is AuthAuthenticated) {
+        emit(AuthAuthenticated(currentState.user));
+      }
+    }
+  }
+
+  Future<void> _onAuthCompleteCourseRequested(
+      AuthCompleteCourseRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    try {
+      final currentState = state;
+      if (currentState is! AuthAuthenticated) {
+        print('⚠️ Cannot complete course: User not authenticated');
+        return;
+      }
+
+      final updatedUser = await _authRepository.completeCourse(event.courseId);
+      emit(AuthAuthenticated(updatedUser));
+    } catch (e) {
+      print('❌ Complete course error: $e');
       final currentState = state;
       if (currentState is AuthAuthenticated) {
         emit(AuthAuthenticated(currentState.user));

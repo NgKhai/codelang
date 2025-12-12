@@ -1,8 +1,11 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
-import '../../../data/models/exercise/exercise.dart';
+import '../../../business/bloc/auth/auth_bloc.dart';
+import '../../../business/bloc/auth/auth_state.dart';
+import '../../../data/models/course/course.dart';
 import '../../../data/services/unified_exercise_service.dart';
 import '../../../style/app_colors.dart';
 import '../../../style/app_routes.dart';
@@ -39,7 +42,6 @@ class _HomeScreenState extends State<HomeScreen>
 
   @override
   Widget build(BuildContext context) {
-    final exercises = UnifiedExerciseService.getAllExerciseSets();
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
 
@@ -63,30 +65,76 @@ class _HomeScreenState extends State<HomeScreen>
           ),
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: exercises.isEmpty
-                ? SliverToBoxAdapter(child: _buildEmptyState())
-                : AnimationLimiter(
-                    child: SliverList(
-                      delegate: SliverChildBuilderDelegate((context, index) {
-                        final exercise = exercises[index];
-                        return AnimationConfiguration.staggeredList(
-                          position: index,
-                          duration: const Duration(milliseconds: 500),
-                          child: SlideAnimation(
-                            verticalOffset: 50.0,
-                            child: FadeInAnimation(
-                              child: _buildExerciseCard(
-                                context,
-                                exercise,
-                                index,
-                                isDark,
-                              ),
+            sliver: FutureBuilder<List<Course>>(
+              future: UnifiedExerciseService.getAllCourses(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: EdgeInsets.all(40),
+                        child: CircularProgressIndicator(),
+                      ),
+                    ),
+                  );
+                }
+
+                if (snapshot.hasError) {
+                  return SliverToBoxAdapter(
+                    child: Center(
+                      child: Padding(
+                        padding: const EdgeInsets.all(40),
+                        child: Column(
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load courses',
+                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              '${snapshot.error}',
+                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
+                              textAlign: TextAlign.center,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  );
+                }
+
+                final courses = snapshot.data ?? [];
+
+                if (courses.isEmpty) {
+                  return SliverToBoxAdapter(child: _buildEmptyState());
+                }
+
+                return AnimationLimiter(
+                  child: SliverList(
+                    delegate: SliverChildBuilderDelegate((context, index) {
+                      final course = courses[index];
+                      return AnimationConfiguration.staggeredList(
+                        position: index,
+                        duration: const Duration(milliseconds: 500),
+                        child: SlideAnimation(
+                          verticalOffset: 50.0,
+                          child: FadeInAnimation(
+                            child: _buildCourseCard(
+                              context,
+                              course,
+                              index,
+                              isDark,
                             ),
                           ),
-                        );
-                      }, childCount: exercises.length),
-                    ),
+                        ),
+                      );
+                    }, childCount: courses.length),
                   ),
+                );
+              },
+            ),
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
         ],
@@ -136,96 +184,152 @@ class _HomeScreenState extends State<HomeScreen>
     final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
 
-    return GestureDetector(
-      onTap: () =>
-          context.push(AppRoutes.subHome, extra: {'exerciseId': 'random'}),
-      child: TweenAnimationBuilder<double>(
-        tween: Tween(begin: 0.95, end: 1.0),
-        duration: const Duration(milliseconds: 500),
-        curve: Curves.easeOut,
-        builder: (context, value, child) {
-          return Transform.scale(scale: value, child: child);
-        },
-        child: Container(
-          padding: const EdgeInsets.all(24),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 20,
-                offset: const Offset(0, 10),
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        // Get streak info from auth state
+        final hasCompletedToday = authState is AuthAuthenticated 
+            ? authState.user.hasCompletedStreakToday 
+            : false;
+        final currentStreak = authState is AuthAuthenticated 
+            ? authState.user.currentStreak 
+            : 0;
+        
+        // Dynamic colors based on streak completion
+        final streakColor = hasCompletedToday 
+            ? AppColors.primary  // Use primary color for completed streak
+            : Colors.grey;       // Grey when not completed
+        final streakBgColor = hasCompletedToday 
+            ? AppColors.primary.withOpacity(0.1) 
+            : Colors.grey.withOpacity(0.1);
+
+        return GestureDetector(
+          onTap: () =>
+              context.push(AppRoutes.subHome, extra: {'exerciseId': 'random'}),
+          child: TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0.95, end: 1.0),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOut,
+            builder: (context, value, child) {
+              return Transform.scale(scale: value, child: child);
+            },
+            child: Container(
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(24),
+                border: Border.all(
+                  color: isDark ? Colors.white10 : Colors.grey.shade200,
+                  width: 1,
+                ),
               ),
-            ],
-          ),
-          child: Row(
-            children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.1),
-                        borderRadius: BorderRadius.circular(20),
-                      ),
-                      child: Text(
-                        'Daily Challenge',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w600,
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 12,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: streakBgColor,
+                                borderRadius: BorderRadius.circular(20),
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(
+                                    Icons.local_fire_department,
+                                    size: 14,
+                                    color: streakColor,
+                                  ),
+                                  const SizedBox(width: 4),
+                                  Text(
+                                    'Daily Streak',
+                                    style: TextStyle(
+                                      color: streakColor,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.w600,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            if (currentStreak > 0)
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: streakBgColor,
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                                child: Text(
+                                  '🔥 $currentStreak',
+                                  style: TextStyle(
+                                    color: streakColor,
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              ),
+                          ],
                         ),
-                      ),
+                        const SizedBox(height: 12),
+                        Text(
+                          hasCompletedToday ? 'Great job today!' : 'Ready to Learn?',
+                          style: TextStyle(
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                            color: textColor,
+                            height: 1.2,
+                          ),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          hasCompletedToday 
+                              ? 'Come back tomorrow to keep your streak!' 
+                              : 'Complete today\'s practice to build your streak!',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: textColor.withOpacity(0.6),
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      'Ready to Learn?',
-                      style: TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.bold,
-                        color: textColor,
-                        height: 1.2,
-                      ),
+                  ),
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: streakBgColor,
+                      shape: BoxShape.circle,
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      'Start a random practice session now!',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: textColor.withOpacity(0.6),
-                      ),
+                    child: Icon(
+                      hasCompletedToday 
+                          ? Icons.check_circle_rounded 
+                          : Icons.local_fire_department,
+                      size: 32,
+                      color: streakColor,
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: AppColors.primary.withOpacity(0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.play_arrow_rounded,
-                  size: 32,
-                  color: AppColors.primary,
-                ),
-              ),
-            ],
+            ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
-  Widget _buildExerciseCard(
+  Widget _buildCourseCard(
     BuildContext context,
-    Exercise exercise,
+    Course course,
     int index,
     bool isDark,
   ) {
@@ -252,90 +356,112 @@ class _HomeScreenState extends State<HomeScreen>
     ];
     final icon = icons[index % icons.length];
 
-    return Hero(
-      tag: 'exercise_${exercise.id}',
-      child: Material(
-        color: Colors.transparent,
-        child: Container(
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            color: cardColor,
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withOpacity(0.05),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
-          ),
-          child: InkWell(
-            onTap: () => context.push(
-              AppRoutes.subHome,
-              extra: {'exerciseId': exercise.id},
-            ),
-            borderRadius: BorderRadius.circular(24),
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 64,
-                    height: 64,
-                    decoration: BoxDecoration(
-                      color: color.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(20),
-                    ),
-                    child: Icon(icon, size: 32, color: color),
-                  ),
-                  const SizedBox(width: 20),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          exercise.name,
-                          style: TextStyle(
-                            fontSize: 18,
-                            fontWeight: FontWeight.bold,
-                            color: textColor,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            Icon(
-                              Icons.assignment_rounded,
-                              size: 16,
-                              color: textColor.withOpacity(0.5),
-                            ),
-                            const SizedBox(width: 4),
-                            Text(
-                              '${exercise.exercises.length} Tasks',
-                              style: TextStyle(
-                                fontSize: 14,
-                                color: textColor.withOpacity(0.5),
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                            const SizedBox(width: 12),
-                            _buildDifficultyBadge(index),
-                          ],
-                        ),
-                      ],
-                    ),
-                  ),
-                  Icon(
-                    Icons.chevron_right_rounded,
-                    color: textColor.withOpacity(0.3),
-                    size: 28,
+    return BlocBuilder<AuthBloc, AuthState>(
+      builder: (context, authState) {
+        final isCompleted = authState is AuthAuthenticated
+            ? authState.user.hasCourseCompleted(course.id)
+            : false;
+
+        return Hero(
+          tag: 'course_${course.id}',
+          child: Material(
+            color: Colors.transparent,
+            child: Container(
+              margin: const EdgeInsets.only(bottom: 16),
+              decoration: BoxDecoration(
+                color: cardColor,
+                borderRadius: BorderRadius.circular(24),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
                   ),
                 ],
               ),
+              child: InkWell(
+                onTap: () => context.push(
+                  AppRoutes.subHome,
+                  extra: {'exerciseId': course.id},
+                ),
+                borderRadius: BorderRadius.circular(24),
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 64,
+                        height: 64,
+                        decoration: BoxDecoration(
+                          color: color.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Icon(icon, size: 32, color: color),
+                      ),
+                      const SizedBox(width: 20),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              course.name,
+                              style: TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                                color: textColor,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            Row(
+                            children: [
+                              Icon(
+                                Icons.assignment_rounded,
+                                size: 16,
+                                color: textColor.withOpacity(0.5),
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${course.exercises.length} Tasks',
+                                style: TextStyle(
+                                  fontSize: 14,
+                                  color: textColor.withOpacity(0.5),
+                                  fontWeight: FontWeight.w500,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              _buildDifficultyBadge(index),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (isCompleted)
+                      Container(
+                        padding: const EdgeInsets.all(8),
+                        decoration: BoxDecoration(
+                          color: AppColors.success.withOpacity(0.1),
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.check_rounded,
+                          color: AppColors.success,
+                          size: 24,
+                        ),
+                      )
+                    else
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: textColor.withOpacity(0.3),
+                        size: 28,
+                      ),
+                  ],
+                ),
+              ),
+              ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 

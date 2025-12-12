@@ -1,4 +1,4 @@
-import 'package:codelang/data/models/flash_card.dart';
+import 'package:codelang/data/models/flashcard/flash_card.dart';
 import 'package:equatable/equatable.dart';
 
 enum FlashCardStatus { initial, loading, success, failure, loadingMore }
@@ -11,6 +11,7 @@ class FlashCardState extends Equatable {
   final String? errorMessage;
   final bool isSpeaking;
   final String? speakingWord;
+  final String? deckId;
 
   const FlashCardState({
     this.status = FlashCardStatus.initial,
@@ -20,6 +21,7 @@ class FlashCardState extends Equatable {
     this.errorMessage,
     this.isSpeaking = false,
     this.speakingWord,
+    this.deckId,
   });
 
   FlashCardState copyWith({
@@ -30,6 +32,7 @@ class FlashCardState extends Equatable {
     String? errorMessage,
     bool? isSpeaking,
     String? speakingWord,
+    String? deckId,
   }) {
     return FlashCardState(
       status: status ?? this.status,
@@ -39,6 +42,7 @@ class FlashCardState extends Equatable {
       errorMessage: errorMessage ?? this.errorMessage,
       isSpeaking: isSpeaking ?? this.isSpeaking,
       speakingWord: speakingWord ?? this.speakingWord,
+      deckId: deckId ?? this.deckId,
     );
   }
 
@@ -51,5 +55,6 @@ class FlashCardState extends Equatable {
     errorMessage,
     isSpeaking,
     speakingWord,
+    deckId,
   ];
 }

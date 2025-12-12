@@ -1,56 +1,17 @@
 import '../models/exercise/multiple_choice_exercise.dart';
+import 'mongo_service.dart';
 
 class MultipleChoiceService {
-  static List<MultipleChoiceExercise> getExercises() {
-    return const [
-      MultipleChoiceExercise(
-        prompt: "Định nghĩa: quan chức, công chức",
-        sentence: "Palace official are refusing to comment on the royal divorce.",
-        blankWord: "official",
-        blankPosition: 1,
-        options: ["official", "correction fluid", "distribution", "partner"],
-        correctOptionIndex: 0,
-        definition: "quan chức, công chức",
-        practiceType: "vocabulary",
-      ),
-      MultipleChoiceExercise(
-        prompt: "Định nghĩa: phúc lợi phụ thêm (ngoài lương)",
-        sentence: "Salary is commensurate with experience and qualifications and includes excellent benefits.",
-        blankWord: "benefits",
-        blankPosition: 10,
-        options: ["salary", "benefits", "experience", "qualifications"],
-        correctOptionIndex: 1,
-        definition: "phúc lợi phụ thêm (ngoài lương)",
-        practiceType: "vocabulary",
-      ),
-      MultipleChoiceExercise(
-        prompt: "Complete the sentence with the correct word:",
-        sentence: "The children are playing in the garden.",
-        blankWord: "playing",
-        blankPosition: 3,
-        options: ["playing", "played", "play", "plays"],
-        correctOptionIndex: 0,
-        practiceType: "grammar",
-      ),
-      MultipleChoiceExercise(
-        prompt: "Choose the correct preposition:",
-        sentence: "She is interested in learning new languages.",
-        blankWord: "in",
-        blankPosition: 3,
-        options: ["in", "on", "at", "for"],
-        correctOptionIndex: 0,
-        practiceType: "grammar",
-      ),
-      MultipleChoiceExercise(
-        prompt: "Select the appropriate article:",
-        sentence: "He bought a new car yesterday.",
-        blankWord: "a",
-        blankPosition: 2,
-        options: ["a", "an", "the", "no article"],
-        correctOptionIndex: 0,
-        practiceType: "grammar",
-      ),
-    ];
+  static final MongoService _mongoService = MongoService.instance;
+
+  static Future<List<MultipleChoiceExercise>> getExercises() async {
+    final data = await _mongoService.fetchMultipleChoiceExercises();
+    return data.map((json) => MultipleChoiceExercise.fromJson(json)).toList();
+  }
+
+  static Future<List<MultipleChoiceExercise>> getExercisesByType(String practiceType) async {
+    final data = await _mongoService.fetchMultipleChoiceByType(practiceType);
+    return data.map((json) => MultipleChoiceExercise.fromJson(json)).toList();
   }
 
   static bool checkAnswer({

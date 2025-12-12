@@ -1,20 +1,17 @@
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import 'package:google_sign_in/google_sign_in.dart';
 import '../models/user_account.dart';
 import '../services/mongo_service.dart';
+
 
 class AuthRepository {
   final MongoService _mongoService;
   final FlutterSecureStorage _secureStorage;
-  final GoogleSignIn _googleSignIn;
 
   AuthRepository({
     MongoService? mongoService,
     FlutterSecureStorage? secureStorage,
-    GoogleSignIn? googleSignIn,
   })  : _mongoService = mongoService ?? MongoService.instance,
-        _secureStorage = secureStorage ?? const FlutterSecureStorage(),
-        _googleSignIn = googleSignIn ?? GoogleSignIn.instance;
+        _secureStorage = secureStorage ?? const FlutterSecureStorage();
 
   // Register with email and password
   Future<UserModel> register({
@@ -70,40 +67,9 @@ class AuthRepository {
     }
   }
 
-  // Login with Google
-  Future<UserModel> loginWithGoogle() async {
-    try {
-      final GoogleSignInAccount googleUser = await _googleSignIn.authenticate();
-
-      if (googleUser == null) {
-        throw Exception('Google sign in cancelled');
-      }
-
-      final userData = await _mongoService.loginWithGoogle(
-        email: googleUser.email,
-        name: googleUser.displayName ?? googleUser.email.split('@')[0],
-        photoUrl: googleUser.photoUrl ?? '',
-        googleId: googleUser.id,
-      );
-
-      if (userData == null) {
-        throw Exception('Google login failed');
-      }
-
-      final user = UserModel.fromJson(userData);
-      await _saveUserSession(user.id);
-      print('✅ Google login successful, saved session for user: ${user.id}');
-      return user;
-    } catch (e) {
-      print('❌ Google login error: $e');
-      throw Exception('Google login failed: ${e.toString()}');
-    }
-  }
-
   // Logout
   Future<void> logout() async {
     await _secureStorage.delete(key: 'userId');
-    await _googleSignIn.signOut();
     print('👋 Logged out, cleared session');
   }
 
@@ -168,6 +134,55 @@ class AuthRepository {
     } catch (e) {
       print('❌ Update name error: $e');
       throw Exception('Failed to update name: ${e.toString()}');
+    }
+  }
+
+  // Complete daily streak
+  Future<UserModel> completeStreak() async {
+    try {
+      final userId = await _secureStorage.read(key: 'userId');
+      if (userId == null || userId.isEmpty) {
+        throw Exception('No user session found');
+      }
+
+      print('🔥 Completing streak for user: $userId');
+      final userData = await _mongoService.updateUserStreak(userId: userId);
+
+      if (userData == null) {
+        throw Exception('Failed to complete streak');
+      }
+
+      print('✅ Streak completed successfully');
+      return UserModel.fromJson(userData);
+    } catch (e) {
+      print('❌ Complete streak error: $e');
+      throw Exception('Failed to complete streak: ${e.toString()}');
+    }
+  }
+
+  // Complete a course
+  Future<UserModel> completeCourse(String courseId) async {
+    try {
+      final userId = await _secureStorage.read(key: 'userId');
+      if (userId == null || userId.isEmpty) {
+        throw Exception('No user session found');
+      }
+
+      print('📚 Completing course $courseId for user: $userId');
+      final userData = await _mongoService.completeCourse(
+        userId: userId,
+        courseId: courseId,
+      );
+
+      if (userData == null) {
+        throw Exception('Failed to complete course');
+      }
+
+      print('✅ Course completed successfully');
+      return UserModel.fromJson(userData);
+    } catch (e) {
+      print('❌ Complete course error: $e');
+      throw Exception('Failed to complete course: ${e.toString()}');
     }
   }
 }

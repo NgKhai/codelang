@@ -1,4 +1,5 @@
 import 'package:codelang/data/services/flash_card_service.dart';
+import 'package:codelang/data/services/flash_card_deck_service.dart';
 import 'package:codelang/data/services/tts_service.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
@@ -7,12 +8,15 @@ import 'flash_card_state.dart';
 
 class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
   final FlashCardService flashCardService;
+  final FlashCardDeckService deckService;
   final TtsService ttsService;
 
   FlashCardBloc({
     required this.flashCardService,
     required this.ttsService,
-  }) : super(const FlashCardState()) {
+    FlashCardDeckService? deckService,
+  }) : deckService = deckService ?? FlashCardDeckService(),
+       super(const FlashCardState()) {
     on<LoadFlashCards>(_onLoadFlashCards);
     on<LoadMoreFlashCards>(_onLoadMoreFlashCards);
     on<RefreshFlashCards>(_onRefreshFlashCards);
@@ -25,16 +29,19 @@ class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
       LoadFlashCards event,
       Emitter<FlashCardState> emit,
       ) async {
-    emit(state.copyWith(status: FlashCardStatus.loading));
+    emit(state.copyWith(status: FlashCardStatus.loading, deckId: event.deckId));
 
     try {
-      final flashCards = await flashCardService.fetchFlashCards(page: 0);
+      final flashCards = event.deckId != null
+          ? await deckService.fetchCardsForDeck(event.deckId!)
+          : await flashCardService.fetchFlashCards(page: 0);
 
       emit(state.copyWith(
         status: FlashCardStatus.success,
         flashCards: flashCards,
         currentPage: 0,
-        hasReachedMax: flashCards.isEmpty,
+        hasReachedMax: event.deckId != null || flashCards.isEmpty,
+        deckId: event.deckId,
       ));
     } catch (error) {
       emit(state.copyWith(

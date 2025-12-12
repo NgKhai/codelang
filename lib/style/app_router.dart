@@ -118,6 +118,7 @@
 
 import 'dart:async';
 import 'package:codelang/presentation/screens/flashcard/flash_card_screen.dart';
+import 'package:codelang/presentation/screens/flashcard/flash_card_deck_screen.dart';
 import 'package:codelang/presentation/screens/home/home_screen.dart';
 import 'package:codelang/presentation/screens/login_screen.dart';
 import 'package:codelang/presentation/screens/register_screen.dart';
@@ -187,7 +188,7 @@ class AppRouter {
             GoRoute(
               path: '/flash-card',
               pageBuilder: (context, state) => NoTransitionPage(
-                child: FlashCardScreen(),
+                child: FlashCardDeckScreen(),
               ),
             ),
             GoRoute(
@@ -207,6 +208,16 @@ class AppRouter {
             final extra = state.extra as Map<String, dynamic>?;
             final exerciseId = extra?['exerciseId'] as String?;
             return UnifiedExerciseScreen(exerciseSetId: exerciseId);
+          },
+        ),
+
+        // Flash card deck routes
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/flashcards/:deckId',
+          builder: (context, state) {
+            final deckId = state.pathParameters['deckId'];
+            return FlashCardScreen(deckId: deckId);
           },
         ),
       ],

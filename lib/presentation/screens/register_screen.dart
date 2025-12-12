@@ -48,9 +48,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
     }
   }
 
-  void _handleGoogleSignUp() {
-    context.read<AuthBloc>().add(AuthGoogleLoginRequested());
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -251,67 +248,6 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               : const Text(
                             'Sign Up',
                             style: AppStyles.buttonText,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(height: AppSizes.p24),
-
-                      // Divider
-                      Row(
-                        children: [
-                          Expanded(
-                            child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                          ),
-                          Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: AppSizes.p16),
-                            child: Text(
-                              'OR',
-                              style: TextStyle(
-                                color: AppColors.textSecondary,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ),
-                          Expanded(
-                            child: Divider(
-                              color: AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: AppSizes.p24),
-
-                      // Google Sign Up Button
-                      SizedBox(
-                        height: AppSizes.buttonHeight,
-                        child: OutlinedButton.icon(
-                          onPressed: isLoading ? null : _handleGoogleSignUp,
-                          style: OutlinedButton.styleFrom(
-                            foregroundColor: isDark ? Colors.white : AppColors.textPrimary,
-                            side: BorderSide(
-                              color: isDark
-                                  ? Colors.white.withOpacity(0.3)
-                                  : AppColors.textSecondary.withOpacity(0.3),
-                            ),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-                            ),
-                          ),
-                          icon: Image.asset(
-                            'assets/images/google_logo.png',
-                            height: 24,
-                            width: 24,
-                            errorBuilder: (context, error, stackTrace) =>
-                            const Icon(Icons.g_mobiledata, size: 24),
-                          ),
-                          label: const Text(
-                            'Sign up with Google',
-                            style: TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w600,
-                            ),
                           ),
                         ),
                       ),

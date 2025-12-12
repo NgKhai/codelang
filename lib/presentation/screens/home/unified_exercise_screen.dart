@@ -5,6 +5,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
+import '../../../business/bloc/auth/auth_bloc.dart';
+import '../../../business/bloc/auth/auth_event.dart';
 import '../../../business/bloc/unified_exercise/unified_exercise_bloc.dart';
 import '../../../business/bloc/unified_exercise/unified_exercise_event.dart';
 import '../../../business/bloc/unified_exercise/unified_exercise_state.dart';
@@ -27,13 +29,15 @@ class UnifiedExerciseScreen extends StatelessWidget {
     return BlocProvider(
       create: (context) => UnifiedExerciseBloc()
         ..add(LoadUnifiedExercises(count: 10, exerciseSetId: exerciseSetId)),
-      child: const _UnifiedExerciseView(),
+      child: _UnifiedExerciseView(exerciseSetId: exerciseSetId),
     );
   }
 }
 
 class _UnifiedExerciseView extends StatefulWidget {
-  const _UnifiedExerciseView();
+  final String? exerciseSetId;
+  
+  const _UnifiedExerciseView({this.exerciseSetId});
 
   @override
   State<_UnifiedExerciseView> createState() => _UnifiedExerciseViewState();
@@ -41,9 +45,11 @@ class _UnifiedExerciseView extends StatefulWidget {
 
 class _UnifiedExerciseViewState extends State<_UnifiedExerciseView> {
   final TextEditingController _textController = TextEditingController();
+
   final FocusNode _textFocusNode = FocusNode();
   final TtsService _ttsService = TtsService();
   bool _isPlayingAudio = false;
+  bool _allowExit = false;
 
   @override
   void initState() {
@@ -81,28 +87,35 @@ class _UnifiedExerciseViewState extends State<_UnifiedExerciseView> {
   }
 
   @override
+
   Widget build(BuildContext context) {
+    // Check if we can pop without dialog (first exercise or explicitly allowed)
+    final isFirstExercise = context.select(
+      (UnifiedExerciseBloc bloc) => bloc.state.currentIndex == 0,
+    );
+    final canPop = isFirstExercise || _allowExit;
+
     return PopScope(
-      canPop: false,
+      canPop: canPop,
       onPopInvokedWithResult: (didPop, result) async {
         if (didPop) return;
+        
         final shouldPop = await _showBackDialog(context);
         if (shouldPop && context.mounted) {
-          context.pop();
+          setState(() => _allowExit = true);
+          // Post frame to allow state update to take effect before popping
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) context.pop();
+          });
         }
       },
       child: Scaffold(
         appBar: CustomAppBar(
-          title: 'Mixed Practice',
-          subtitle: 'Random Exercises',
+          title: 'CodeLang',
+          subtitle: 'Learning with the coding',
           leadingIcon: Icons.school_rounded,
           showBackButton: true,
-          onLeadingIconPressed: () async {
-            final shouldPop = await _showBackDialog(context);
-            if (shouldPop && context.mounted) {
-              context.pop();
-            }
-          },
+          onLeadingIconPressed: () => Navigator.maybePop(context),
           actions: [
             AppBarActionButton(
               icon: Icons.help_outline_rounded,
@@ -1164,6 +1177,17 @@ class _UnifiedExerciseViewState extends State<_UnifiedExerciseView> {
                           ),
                           onPressed: () {
                             if (state.isLastExercise) {
+                              // Complete the streak when finishing all exercises
+                              context.read<AuthBloc>().add(AuthCompleteStreakRequested());
+                              
+                              // Complete the course if it's a specific course (not random)
+                              final courseId = widget.exerciseSetId;
+                              if (courseId != null && courseId != 'random') {
+                                context.read<AuthBloc>().add(
+                                  AuthCompleteCourseRequested(courseId: courseId),
+                                );
+                              }
+                              
                               context.pop(); // Go back to previous screen (Home)
                             } else {
                               context

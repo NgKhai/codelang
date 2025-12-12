@@ -2,6 +2,7 @@ import 'package:codelang/data/services/flash_card_service.dart';
 import 'package:codelang/presentation/widgets/flash_card_widget.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:go_router/go_router.dart';
 
 import '../../../business/bloc/flash_card/flash_card_bloc.dart';
 import '../../../business/bloc/flash_card/flash_card_event.dart';
@@ -11,7 +12,9 @@ import '../../../style/app_colors.dart';
 import '../../../style/custom_app_bar.dart';
 
 class FlashCardScreen extends StatelessWidget {
-  const FlashCardScreen({super.key});
+  final String? deckId;
+
+  const FlashCardScreen({super.key, this.deckId});
 
   @override
   Widget build(BuildContext context) {
@@ -19,7 +22,7 @@ class FlashCardScreen extends StatelessWidget {
       create: (context) => FlashCardBloc(
         flashCardService: FlashCardService(),
         ttsService: TtsService(),
-      )..add(const LoadFlashCards()),
+      )..add(LoadFlashCards(deckId: deckId)),
       child: const PracticeScreenView(),
     );
   }
@@ -68,16 +71,8 @@ class _PracticeScreenViewState extends State<PracticeScreenView> {
     return Scaffold(
       backgroundColor: backgroundColor,
       appBar: AppBarStyles.practice(
-        onFilterPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Filter feature coming soon!')),
-          );
-        },
-        onSearchPressed: () {
-          ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Search feature coming soon!')),
-          );
-        },
+        showBackButton: true,
+        onLeadingIconPressed: () => context.pop(),
       ),
       body: Container(
         decoration: BoxDecoration(

@@ -21,6 +21,22 @@ class FillBlankExercise {
     this.acceptableAnswers,
   });
 
+  factory FillBlankExercise.fromJson(Map<String, dynamic> json) {
+    return FillBlankExercise(
+      prompt: json['prompt'] as String,
+      sentence: json['sentence'] as String,
+      correctAnswer: json['correctAnswer'] as String,
+      blankPosition: json['blankPosition'] as int,
+      imageUrl: json['imageUrl'] as String?,
+      definition: json['definition'] as String?,
+      wordType: json['wordType'] as String?,
+      hint: json['hint'] as String?,
+      acceptableAnswers: json['acceptableAnswers'] != null
+          ? List<String>.from(json['acceptableAnswers'] as List)
+          : null,
+    );
+  }
+
   // Get the sentence with blank replaced by "_____"
   String getSentenceWithBlank() {
     final words = sentence.split(' ');
@@ -49,6 +65,11 @@ class FillBlankExercise {
 
   // Get the complete sentence with answer
   String getCompleteSentence() {
+    // If the sentence already contains a blank placeholder, replace it
+    if (sentence.contains('_____')) {
+      return sentence.replaceFirst('_____', correctAnswer);
+    }
+    // Otherwise return the sentence as-is (it should already be complete)
     return sentence;
   }
 }

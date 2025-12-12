@@ -168,7 +168,7 @@ class ProfileScreen extends StatelessWidget {
                             children: [
                               const SizedBox(height: AppSizes.p24),
                               // Stats Section
-                              _buildStatsSection(isDark, cardColor, textColor),
+                              _buildStatsSection(isDark, cardColor, textColor, user),
                               const SizedBox(height: AppSizes.p24),
 
                               // Menu Sections
@@ -293,28 +293,28 @@ class ProfileScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildStatsSection(bool isDark, Color cardColor, Color textColor) {
+  Widget _buildStatsSection(bool isDark, Color cardColor, Color textColor, user) {
+    final hasCompletedToday = user.hasCompletedStreakToday;
+    final streakColor = hasCompletedToday ? AppColors.primary : Colors.grey;
+    
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: cardColor,
         borderRadius: BorderRadius.circular(24),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 20,
-            offset: const Offset(0, 10),
-          ),
-        ],
+        border: Border.all(
+          color: isDark ? Colors.white10 : Colors.grey.shade200,
+          width: 1,
+        ),
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceAround,
         children: [
           _buildStatItem(
-            value: '24',
-            label: 'Courses',
-            icon: Icons.book,
-            color: AppColors.primary,
+            value: '${user.currentStreak}',
+            label: 'Streaks',
+            icon: Icons.local_fire_department,
+            color: streakColor,
             textColor: textColor,
           ),
           Container(
@@ -323,9 +323,9 @@ class ProfileScreen extends StatelessWidget {
             color: isDark ? Colors.white24 : Colors.grey.shade200,
           ),
           _buildStatItem(
-            value: '12',
-            label: 'Certificates',
-            icon: Icons.workspace_premium,
+            value: '${user.completedCourseIds.length}',
+            label: 'Courses',
+            icon: Icons.book,
             color: AppColors.accent,
             textColor: textColor,
           ),

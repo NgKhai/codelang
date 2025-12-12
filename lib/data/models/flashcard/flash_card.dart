@@ -20,4 +20,18 @@ class FlashCard {
     required this.flashCardExampleTranslation,
     required this.practiceType,
   });
+
+  factory FlashCard.fromJson(Map<String, dynamic> json) {
+    return FlashCard(
+      flashCardId: json['flashCardId'] as String,
+      flashCardWord: json['flashCardWord'] as String,
+      flashCardPartOfSpeech: json['flashCardPartOfSpeech'] as String,
+      flashCardPronunciation: json['flashCardPronunciation'] as String,
+      flashCardImageUrl: json['flashCardImageUrl'] as String,
+      flashCardDefinition: json['flashCardDefinition'] as String,
+      flashCardExampleSentence: json['flashCardExampleSentence'] as String,
+      flashCardExampleTranslation: json['flashCardExampleTranslation'] as String,
+      practiceType: json['practiceType'] as String? ?? '',
+    );
+  }
 }
