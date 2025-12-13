@@ -1,16 +1,19 @@
+// lib/data/services/flash_card_service.dart
+// Updated to use REST API instead of direct MongoDB
+
 import 'package:codelang/data/models/flashcard/flash_card.dart';
-import 'mongo_service.dart';
+import 'api_service.dart';
 
 class FlashCardService {
   static const int pageSize = 5;
-  final MongoService _mongoService = MongoService.instance;
+  final ApiService _apiService = ApiService.instance;
 
-  /// Fetches a page of flash cards from MongoDB
+  /// Fetches a page of flash cards from API
   Future<List<FlashCard>> fetchFlashCards({
     required int page,
     int limit = pageSize,
   }) async {
-    final flashCardsData = await _mongoService.fetchFlashCards(
+    final flashCardsData = await _apiService.fetchFlashCards(
       page: page,
       limit: limit,
     );
@@ -20,9 +23,9 @@ class FlashCardService {
         .toList();
   }
 
-  /// Fetches a single flash card by ID from MongoDB
+  /// Fetches a single flash card by ID from API
   Future<FlashCard?> fetchFlashCardById(String id) async {
-    final data = await _mongoService.fetchFlashCardById(id);
+    final data = await _apiService.fetchFlashCardById(id);
     
     if (data == null) {
       return null;
@@ -33,6 +36,6 @@ class FlashCardService {
 
   /// Gets the total count of flash cards
   Future<int> getTotalCount() async {
-    return await _mongoService.getFlashCardsCount();
+    return await _apiService.getFlashCardsCount();
   }
 }

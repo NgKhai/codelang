@@ -9,6 +9,7 @@ class UserModel extends Equatable {
   // final String authProvider; // 'email' or 'google'
   final int currentStreak;
   final List<String> completedCourseIds;
+  final int learnedWordsCount;
   final DateTime lastCompletionDate;
   final DateTime createdAt;
 
@@ -20,6 +21,7 @@ class UserModel extends Equatable {
     // required this.authProvider,
     required this.currentStreak,
     required this.completedCourseIds,
+    this.learnedWordsCount = 0,
     required this.lastCompletionDate,
     required this.createdAt,
   });
@@ -36,6 +38,7 @@ class UserModel extends Equatable {
               ?.map((e) => e.toString())
               .toList() ??
           [],
+      learnedWordsCount: json['learnedWordsCount'] ?? 0,
       lastCompletionDate: json['lastCompletionDate'] != null
           ? DateTime.parse(json['lastCompletionDate'])
           : DateTime.now().subtract(const Duration(days: 1)),
@@ -53,6 +56,7 @@ class UserModel extends Equatable {
       // 'authProvider': authProvider,
       'currentStreak': currentStreak,
       'completedCourseIds': completedCourseIds,
+      'learnedWordsCount': learnedWordsCount,
       'lastCompletionDate': lastCompletionDate.toIso8601String(),
       'createdAt': createdAt.toIso8601String(),
     };
@@ -84,6 +88,7 @@ class UserModel extends Equatable {
     // authProvider,
     currentStreak,
     completedCourseIds,
+    learnedWordsCount,
     lastCompletionDate,
     createdAt,
   ];

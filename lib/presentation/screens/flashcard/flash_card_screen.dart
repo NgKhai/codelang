@@ -11,10 +11,12 @@ import '../../../data/services/tts_service.dart';
 import '../../../style/app_colors.dart';
 import '../../../style/custom_app_bar.dart';
 
+/// Screen to view all cards in a deck (no rating, just browsing)
 class FlashCardScreen extends StatelessWidget {
   final String? deckId;
+  final String? deckName;
 
-  const FlashCardScreen({super.key, this.deckId});
+  const FlashCardScreen({super.key, this.deckId, this.deckName});
 
   @override
   Widget build(BuildContext context) {
@@ -23,19 +25,22 @@ class FlashCardScreen extends StatelessWidget {
         flashCardService: FlashCardService(),
         ttsService: TtsService(),
       )..add(LoadFlashCards(deckId: deckId)),
-      child: const PracticeScreenView(),
+      child: _FlashCardView(deckId: deckId, deckName: deckName),
     );
   }
 }
 
-class PracticeScreenView extends StatefulWidget {
-  const PracticeScreenView({super.key});
+class _FlashCardView extends StatefulWidget {
+  final String? deckId;
+  final String? deckName;
+
+  const _FlashCardView({this.deckId, this.deckName});
 
   @override
-  State<PracticeScreenView> createState() => _PracticeScreenViewState();
+  State<_FlashCardView> createState() => _FlashCardViewState();
 }
 
-class _PracticeScreenViewState extends State<PracticeScreenView> {
+class _FlashCardViewState extends State<_FlashCardView> {
   final ScrollController _scrollController = ScrollController();
 
   @override
@@ -52,7 +57,8 @@ class _PracticeScreenViewState extends State<PracticeScreenView> {
 
   void _onScroll() {
     if (_isBottom) {
-      context.read<FlashCardBloc>().add(const LoadMoreFlashCards());
+      // Load more cards for THIS deck only
+      context.read<FlashCardBloc>().add(LoadMoreFlashCards(deckId: widget.deckId));
     }
   }
 
@@ -84,107 +90,192 @@ class _PracticeScreenViewState extends State<PracticeScreenView> {
                 : [const Color(0xFFF5F7FA), const Color(0xFFE8ECF2)],
           ),
         ),
-        child: BlocBuilder<FlashCardBloc, FlashCardState>(
-          builder: (context, state) {
-            switch (state.status) {
-              case FlashCardStatus.initial:
-              case FlashCardStatus.loading:
-                return const Center(
-                  child: CircularProgressIndicator(color: AppColors.primary),
-                );
+        child: Column(
+          children: [
+            // Start Practice Header
+            _buildPracticeHeader(context, isDark),
 
-              case FlashCardStatus.failure:
-                return Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(Icons.error_outline, size: 48, color: AppColors.error),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Failed to load flash cards',
-                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                          color: isDark ? Colors.white : AppColors.textPrimary,
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        state.errorMessage ?? 'Unknown error',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: isDark ? Colors.white70 : AppColors.textSecondary,
-                        ),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () {
-                          context.read<FlashCardBloc>().add(const LoadFlashCards());
-                        },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: AppColors.primary,
-                          foregroundColor: Colors.white,
-                        ),
-                        icon: const Icon(Icons.refresh),
-                        label: const Text('Retry'),
-                      ),
-                    ],
-                  ),
-                );
+            // Cards list
+            Expanded(
+              child: BlocBuilder<FlashCardBloc, FlashCardState>(
+                builder: (context, state) {
+                  switch (state.status) {
+                    case FlashCardStatus.initial:
+                    case FlashCardStatus.loading:
+                      return const Center(
+                        child: CircularProgressIndicator(color: AppColors.primary),
+                      );
 
-              case FlashCardStatus.success:
-              case FlashCardStatus.loadingMore:
-                if (state.flashCards.isEmpty) {
-                  return Center(
-                    child: Text(
-                      'No flash cards available',
-                      style: TextStyle(
-                        color: isDark ? Colors.white70 : AppColors.textSecondary,
-                        fontSize: 16,
-                      ),
-                    ),
-                  );
-                }
-
-                return RefreshIndicator(
-                  onRefresh: () async {
-                    context.read<FlashCardBloc>().add(const RefreshFlashCards());
-                    await context.read<FlashCardBloc>().stream.firstWhere(
-                          (state) => state.status != FlashCardStatus.loading,
-                    );
-                  },
-                  color: AppColors.primary,
-                  child: ListView.builder(
-                    controller: _scrollController,
-                    itemCount: state.hasReachedMax
-                        ? state.flashCards.length
-                        : state.flashCards.length + 1,
-                    padding: const EdgeInsets.symmetric(vertical: 16.0),
-                    physics: const BouncingScrollPhysics(),
-                    itemBuilder: (context, index) {
-                      if (index >= state.flashCards.length) {
-                        return Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 24.0),
-                          child: Center(
-                            child: state.status == FlashCardStatus.loadingMore
-                                ? const CircularProgressIndicator(
-                                color: AppColors.primary)
-                                : Text(
-                              "Pull down to refresh",
-                              style: TextStyle(
-                                color: isDark ? Colors.white54 : Colors.grey,
+                    case FlashCardStatus.failure:
+                      return Center(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Icon(Icons.error_outline, size: 48, color: AppColors.error),
+                            const SizedBox(height: 16),
+                            Text(
+                              'Failed to load flash cards',
+                              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                color: isDark ? Colors.white : AppColors.textPrimary,
                               ),
+                            ),
+                            const SizedBox(height: 8),
+                            Text(
+                              state.errorMessage ?? 'Unknown error',
+                              style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                                color: isDark ? Colors.white70 : AppColors.textSecondary,
+                              ),
+                              textAlign: TextAlign.center,
+                            ),
+                            const SizedBox(height: 24),
+                            ElevatedButton.icon(
+                              onPressed: () {
+                                // Refresh with current deck only
+                                context.read<FlashCardBloc>().add(
+                                  LoadFlashCards(deckId: widget.deckId),
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                              ),
+                              icon: const Icon(Icons.refresh),
+                              label: const Text('Retry'),
+                            ),
+                          ],
+                        ),
+                      );
+
+                    case FlashCardStatus.success:
+                    case FlashCardStatus.loadingMore:
+                      if (state.flashCards.isEmpty) {
+                        return Center(
+                          child: Text(
+                            'No flash cards available',
+                            style: TextStyle(
+                              color: isDark ? Colors.white70 : AppColors.textSecondary,
+                              fontSize: 16,
                             ),
                           ),
                         );
                       }
 
-                      final entry = state.flashCards[index];
-                      return FlashCardWidget(entry: entry);
-                    },
-                  ),
-                );
-            }
-          },
+                      return RefreshIndicator(
+                        onRefresh: () async {
+                          // Refresh with current deck only - fixed!
+                          context.read<FlashCardBloc>().add(
+                            LoadFlashCards(deckId: widget.deckId),
+                          );
+                          await context.read<FlashCardBloc>().stream.firstWhere(
+                                (state) => state.status == FlashCardStatus.success ||
+                                    state.status == FlashCardStatus.failure,
+                          );
+                        },
+                        color: AppColors.primary,
+                        child: ListView.builder(
+                          controller: _scrollController,
+                          itemCount: state.hasReachedMax
+                              ? state.flashCards.length
+                              : state.flashCards.length + 1,
+                          padding: const EdgeInsets.symmetric(vertical: 16.0),
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          itemBuilder: (context, index) {
+                            if (index >= state.flashCards.length) {
+                              return Padding(
+                                padding: const EdgeInsets.symmetric(vertical: 24.0),
+                                child: Center(
+                                  child: state.status == FlashCardStatus.loadingMore
+                                      ? const CircularProgressIndicator(
+                                          color: AppColors.primary)
+                                      : Text(
+                                          "Pull down to refresh",
+                                          style: TextStyle(
+                                            color: isDark ? Colors.white54 : Colors.grey,
+                                          ),
+                                        ),
+                                ),
+                              );
+                            }
+
+                            final entry = state.flashCards[index];
+                            // No rating callback - just viewing
+                            return FlashCardWidget(entry: entry);
+                          },
+                        ),
+                      );
+                  }
+                },
+              ),
+            ),
+          ],
         ),
+      ),
+    );
+  }
+
+  Widget _buildPracticeHeader(BuildContext context, bool isDark) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: isDark ? const Color(0xFF1E1E1E) : Colors.white,
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.deckName ?? 'Flash Cards',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.bold,
+                    color: isDark ? Colors.white : Colors.black87,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                BlocBuilder<FlashCardBloc, FlashCardState>(
+                  builder: (context, state) {
+                    return Text(
+                      '${state.flashCards.length} words',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white54 : AppColors.textSecondary,
+                      ),
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton.icon(
+            onPressed: () {
+              if (widget.deckId != null) {
+                context.push(
+                  '/flashcards/${widget.deckId}/practice',
+                  extra: {'deckName': widget.deckName},
+                );
+              }
+            },
+            icon: const Icon(Icons.play_arrow_rounded),
+            label: const Text('Start Practice'),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: AppColors.primary,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }

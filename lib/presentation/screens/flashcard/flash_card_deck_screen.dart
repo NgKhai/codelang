@@ -8,6 +8,7 @@ import '../../../business/bloc/flash_card_deck/flash_card_deck_state.dart';
 import '../../../data/models/flashcard/flash_card_deck.dart';
 import '../../../style/app_colors.dart';
 import '../../../style/custom_app_bar.dart';
+import '../../widgets/deck_stats_bottom_sheet.dart';
 
 class FlashCardDeckScreen extends StatelessWidget {
   const FlashCardDeckScreen({super.key});
@@ -152,7 +153,8 @@ class _DeckCard extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: () {
-          context.push('/flashcards/${deck.deckId}');
+          // Show stats bottom sheet instead of navigating directly
+          DeckStatsBottomSheet.show(context, deck.deckId, deck.name);
         },
         borderRadius: BorderRadius.circular(24),
         child: Container(

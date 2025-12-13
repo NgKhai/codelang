@@ -1,24 +1,27 @@
+// lib/data/services/unified_exercise_service.dart
+// Updated to use REST API instead of direct MongoDB
+
 import 'dart:math';
 import '../models/course/course.dart';
 import '../models/exercise/unified_exercise.dart';
 import '../models/exercise/reorder_exercise.dart';
 import '../models/exercise/multiple_choice_exercise.dart';
 import '../models/exercise/fill_blank_exercise.dart';
-import 'mongo_service.dart';
+import 'api_service.dart';
 
 class UnifiedExerciseService {
-  static final MongoService _mongoService = MongoService.instance;
+  static final ApiService _apiService = ApiService.instance;
 
   // Get all courses for the home screen
   static Future<List<Course>> getAllCourses() async {
-    final setsData = await _mongoService.fetchExerciseSets();
+    final coursesData = await _apiService.fetchAllCourses();
     final List<Course> courses = [];
 
-    for (final setData in setsData) {
-      final exercises = await _getExercisesForSet(setData);
+    for (final courseData in coursesData) {
+      final exercises = _parseExercises(courseData['exercises'] as List);
       courses.add(Course(
-        id: setData['setId'] as String,
-        name: setData['name'] as String,
+        id: courseData['id'] as String,
+        name: courseData['name'] as String,
         exercises: exercises,
       ));
     }
@@ -26,67 +29,71 @@ class UnifiedExerciseService {
     return courses;
   }
 
-  // Helper to build exercises for a set
-  static Future<List<UnifiedExercise>> _getExercisesForSet(Map<String, dynamic> setData) async {
-    final exerciseRefs = setData['exercises'] as List;
+  // Helper to parse exercises from API response
+  static List<UnifiedExercise> _parseExercises(List exercisesData) {
     final List<UnifiedExercise> exercises = [];
-
-    // Pre-fetch all exercise types
-    final reorderData = await _mongoService.fetchReorderExercises();
-    final mcData = await _mongoService.fetchMultipleChoiceExercises();
-    final fbData = await _mongoService.fetchFillBlankExercises();
-
-    for (int i = 0; i < exerciseRefs.length; i++) {
-      final ref = exerciseRefs[i] as Map<String, dynamic>;
-      final type = ref['type'] as String;
-      final index = ref['index'] as int;
-
+    
+    for (final exerciseData in exercisesData) {
+      final type = exerciseData['type'] as String;
+      final id = exerciseData['id'] as String;
+      final data = exerciseData['data'] as Map<String, dynamic>;
+      
       switch (type) {
         case 'reorder':
-          if (index < reorderData.length) {
-            exercises.add(UnifiedExercise.reorder(
-              id: '${setData['setId']}_reorder_$i',
-              exercise: ReorderExercise.fromJson(reorderData[index]),
-            ));
-          }
+          exercises.add(UnifiedExercise.reorder(
+            id: id,
+            exercise: ReorderExercise.fromJson(data),
+          ));
           break;
         case 'multiple_choice':
-          if (index < mcData.length) {
-            exercises.add(UnifiedExercise.multipleChoice(
-              id: '${setData['setId']}_mc_$i',
-              exercise: MultipleChoiceExercise.fromJson(mcData[index]),
-            ));
-          }
+          exercises.add(UnifiedExercise.multipleChoice(
+            id: id,
+            exercise: MultipleChoiceExercise.fromJson(data),
+          ));
           break;
         case 'fill_blank':
-          if (index < fbData.length) {
-            exercises.add(UnifiedExercise.fillBlank(
-              id: '${setData['setId']}_fb_$i',
-              exercise: FillBlankExercise.fromJson(fbData[index]),
-            ));
-          }
+          exercises.add(UnifiedExercise.fillBlank(
+            id: id,
+            exercise: FillBlankExercise.fromJson(data),
+          ));
           break;
       }
     }
-
+    
     return exercises;
   }
 
   // Get exercises for a specific exercise set
   static Future<List<UnifiedExercise>> getExercisesBySetId(String setId) async {
-    final setData = await _mongoService.fetchExerciseSetById(setId);
+    final setData = await _apiService.fetchExerciseSetById(setId);
     if (setData == null) {
       throw Exception('Exercise set not found: $setId');
     }
-    return _getExercisesForSet(setData);
+    return _parseExercises(setData['exercises'] as List);
+  }
+
+  // Get random exercises
+  static Future<List<UnifiedExercise>> getRandomExercises({int count = 10}) async {
+    final exercisesData = await _apiService.fetchRandomExercises(count: count);
+    return _parseExercises(exercisesData);
   }
 
   // Get all available exercises from all types (for random practice)
   static Future<List<UnifiedExercise>> getAllExercises() async {
     final allExercises = <UnifiedExercise>[];
 
+    // Fetch all exercise types in parallel
+    final results = await Future.wait([
+      _apiService.fetchReorderExercises(),
+      _apiService.fetchMultipleChoiceExercises(),
+      _apiService.fetchFillBlankExercises(),
+    ]);
+
+    final reorderData = results[0];
+    final mcData = results[1];
+    final fbData = results[2];
+
     // Add Reorder exercises
-    final reorderData = await _mongoService.fetchReorderExercises();
     for (int i = 0; i < reorderData.length; i++) {
       allExercises.add(UnifiedExercise.reorder(
         id: 'reorder_$i',
@@ -95,7 +102,6 @@ class UnifiedExerciseService {
     }
 
     // Add Multiple Choice exercises
-    final mcData = await _mongoService.fetchMultipleChoiceExercises();
     for (int i = 0; i < mcData.length; i++) {
       allExercises.add(UnifiedExercise.multipleChoice(
         id: 'multiple_choice_$i',
@@ -104,7 +110,6 @@ class UnifiedExerciseService {
     }
 
     // Add Fill in the Blank exercises
-    final fbData = await _mongoService.fetchFillBlankExercises();
     for (int i = 0; i < fbData.length; i++) {
       allExercises.add(UnifiedExercise.fillBlank(
         id: 'fill_blank_$i',
@@ -113,18 +118,5 @@ class UnifiedExerciseService {
     }
 
     return allExercises;
-  }
-
-  // Get random exercises
-  static Future<List<UnifiedExercise>> getRandomExercises({int count = 10}) async {
-    final allExercises = await getAllExercises();
-
-    if (allExercises.length <= count) {
-      allExercises.shuffle(Random());
-      return allExercises;
-    }
-
-    allExercises.shuffle(Random());
-    return allExercises.take(count).toList();
   }
 }

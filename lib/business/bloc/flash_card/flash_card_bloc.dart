@@ -32,9 +32,13 @@ class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
     emit(state.copyWith(status: FlashCardStatus.loading, deckId: event.deckId));
 
     try {
-      final flashCards = event.deckId != null
+      var flashCards = event.deckId != null
           ? await deckService.fetchCardsForDeck(event.deckId!)
           : await flashCardService.fetchFlashCards(page: 0);
+
+      if (event.shuffle) {
+        flashCards = List.of(flashCards)..shuffle();
+      }
 
       emit(state.copyWith(
         status: FlashCardStatus.success,

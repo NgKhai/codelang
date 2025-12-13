@@ -17,6 +17,24 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthUpdateNameRequested>(_onAuthUpdateNameRequested);
     on<AuthCompleteStreakRequested>(_onAuthCompleteStreakRequested);
     on<AuthCompleteCourseRequested>(_onAuthCompleteCourseRequested);
+    on<AuthRefreshRequested>(_onAuthRefreshRequested);
+  }
+    
+  Future<void> _onAuthRefreshRequested(
+      AuthRefreshRequested event,
+      Emitter<AuthState> emit,
+      ) async {
+    try {
+      final isLoggedIn = await _authRepository.isLoggedIn();
+      if (isLoggedIn) {
+        final user = await _authRepository.getCurrentUser();
+        if (user != null) {
+          emit(AuthAuthenticated(user));
+        }
+      }
+    } catch (e) {
+      print('❌ Auth refresh error: $e');
+    }
   }
 
   Future<void> _onAuthCheckRequested(

@@ -1,19 +1,22 @@
+// lib/data/services/flash_card_deck_service.dart
+// Updated to use REST API instead of direct MongoDB
+
 import 'package:codelang/data/models/flashcard/flash_card.dart';
 import 'package:codelang/data/models/flashcard/flash_card_deck.dart';
-import 'mongo_service.dart';
+import 'api_service.dart';
 
 class FlashCardDeckService {
-  final MongoService _mongoService = MongoService.instance;
+  final ApiService _apiService = ApiService.instance;
 
-  /// Fetches all flash card decks from MongoDB
+  /// Fetches all flash card decks from API
   Future<List<FlashCardDeck>> fetchAllDecks() async {
-    final decksData = await _mongoService.fetchFlashCardDecks();
+    final decksData = await _apiService.fetchFlashCardDecks();
     return decksData.map((data) => FlashCardDeck.fromJson(data)).toList();
   }
 
   /// Fetches a single flash card deck by ID
   Future<FlashCardDeck?> fetchDeckById(String deckId) async {
-    final data = await _mongoService.fetchFlashCardDeckById(deckId);
+    final data = await _apiService.fetchFlashCardDeckById(deckId);
     if (data == null) {
       return null;
     }
@@ -27,7 +30,7 @@ class FlashCardDeckService {
       return [];
     }
 
-    final cardsData = await _mongoService.fetchFlashCardsByIds(deck.cardIds);
+    final cardsData = await _apiService.fetchFlashCardsByIds(deck.cardIds);
     return cardsData.map((data) => FlashCard.fromJson(data)).toList();
   }
 }

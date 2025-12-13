@@ -10,8 +10,15 @@ import '../../style/app_colors.dart';
 
 class FlashCardWidget extends StatelessWidget {
   final FlashCard entry;
+  final String? deckId;
+  final Function(String cardId, int quality)? onRated;
 
-  const FlashCardWidget({super.key, required this.entry});
+  const FlashCardWidget({
+    super.key,
+    required this.entry,
+    this.deckId,
+    this.onRated,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -346,6 +353,80 @@ class FlashCardWidget extends StatelessWidget {
                         ),
                       ],
                     ),
+
+                    // Rating buttons (only show if callback provided)
+                    if (onRated != null) ...[
+                      const SizedBox(height: 24),
+                      Divider(
+                        height: 1,
+                        color: isDark ? Colors.white10 : Colors.grey.shade100,
+                      ),
+                      const SizedBox(height: 16),
+                      Text(
+                        'How well did you know this?',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.bold,
+                          color: isDark ? Colors.white54 : AppColors.textSecondary,
+                        ),
+                        textAlign: TextAlign.center,
+                      ),
+                      const SizedBox(height: 12),
+                      // 2x2 Grid layout for rating buttons
+                      Column(
+                        children: [
+                          // Top row: Easy (left), Good (right)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildRatingButton(
+                                  context: context,
+                                  label: 'Easy',
+                                  color: AppColors.success,
+                                  quality: 5,
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildRatingButton(
+                                  context: context,
+                                  label: 'Good',
+                                  color: AppColors.accent,
+                                  quality: 4,
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                          const SizedBox(height: 12),
+                          // Bottom row: Hard (left), Again (right)
+                          Row(
+                            children: [
+                              Expanded(
+                                child: _buildRatingButton(
+                                  context: context,
+                                  label: 'Hard',
+                                  color: AppColors.warning,
+                                  quality: 3,
+                                  isDark: isDark,
+                                ),
+                              ),
+                              const SizedBox(width: 12),
+                              Expanded(
+                                child: _buildRatingButton(
+                                  context: context,
+                                  label: 'Again',
+                                  color: AppColors.error,
+                                  quality: 0,
+                                  isDark: isDark,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ],
                   ],
                 ),
               ),
@@ -353,6 +434,37 @@ class FlashCardWidget extends StatelessWidget {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildRatingButton({
+    required BuildContext context,
+    required String label,
+    required Color color,
+    required int quality,
+    required bool isDark,
+  }) {
+    return ElevatedButton(
+      onPressed: () {
+        onRated?.call(entry.flashCardId, quality);
+      },
+      style: ElevatedButton.styleFrom(
+        backgroundColor: color.withOpacity(0.15),
+        foregroundColor: color,
+        elevation: 0,
+        padding: const EdgeInsets.symmetric(vertical: 16),
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(12),
+          side: BorderSide(color: color.withOpacity(0.3)),
+        ),
+      ),
+      child: Text(
+        label,
+        style: const TextStyle(
+          fontWeight: FontWeight.bold,
+          fontSize: 13,
+        ),
+      ),
     );
   }
 }

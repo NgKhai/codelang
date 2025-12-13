@@ -1,14 +1,15 @@
 // lib/services/exercise_service.dart
+// Updated to use REST API instead of direct MongoDB
 
 import '../models/exercise/reorder_exercise.dart';
-import 'mongo_service.dart';
+import 'api_service.dart';
 
 class ExerciseService {
-  static final MongoService _mongoService = MongoService.instance;
+  static final ApiService _apiService = ApiService.instance;
 
-  // Fetch exercises from MongoDB
+  // Fetch exercises from API
   static Future<List<ReorderExercise>> getExercises() async {
-    final data = await _mongoService.fetchReorderExercises();
+    final data = await _apiService.fetchReorderExercises();
     return data.map((json) => ReorderExercise.fromJson(json)).toList();
   }
 

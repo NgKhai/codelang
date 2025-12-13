@@ -118,6 +118,7 @@
 
 import 'dart:async';
 import 'package:codelang/presentation/screens/flashcard/flash_card_screen.dart';
+import 'package:codelang/presentation/screens/flashcard/flash_card_practice_screen.dart';
 import 'package:codelang/presentation/screens/flashcard/flash_card_deck_screen.dart';
 import 'package:codelang/presentation/screens/home/home_screen.dart';
 import 'package:codelang/presentation/screens/login_screen.dart';
@@ -217,7 +218,21 @@ class AppRouter {
           path: '/flashcards/:deckId',
           builder: (context, state) {
             final deckId = state.pathParameters['deckId'];
-            return FlashCardScreen(deckId: deckId);
+            final extra = state.extra as Map<String, dynamic>?;
+            final deckName = extra?['deckName'] as String?;
+            return FlashCardScreen(deckId: deckId, deckName: deckName);
+          },
+        ),
+        
+        // Flash card practice route
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/flashcards/:deckId/practice',
+          builder: (context, state) {
+            final deckId = state.pathParameters['deckId']!;
+            final extra = state.extra as Map<String, dynamic>?;
+            final deckName = extra?['deckName'] as String?;
+            return FlashCardPracticeScreen(deckId: deckId, deckName: deckName);
           },
         ),
       ],

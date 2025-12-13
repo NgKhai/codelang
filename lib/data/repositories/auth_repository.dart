@@ -1,17 +1,15 @@
-import 'package:flutter_secure_storage/flutter_secure_storage.dart';
-import '../models/user_account.dart';
-import '../services/mongo_service.dart';
+// lib/data/repositories/auth_repository.dart
+// Updated to use REST API instead of direct MongoDB
 
+import '../models/user_account.dart';
+import '../services/api_service.dart';
 
 class AuthRepository {
-  final MongoService _mongoService;
-  final FlutterSecureStorage _secureStorage;
+  final ApiService _apiService;
 
   AuthRepository({
-    MongoService? mongoService,
-    FlutterSecureStorage? secureStorage,
-  })  : _mongoService = mongoService ?? MongoService.instance,
-        _secureStorage = secureStorage ?? const FlutterSecureStorage();
+    ApiService? apiService,
+  }) : _apiService = apiService ?? ApiService.instance;
 
   // Register with email and password
   Future<UserModel> register({
@@ -21,19 +19,14 @@ class AuthRepository {
   }) async {
     try {
       print('📝 Attempting registration for: $email');
-      final userData = await _mongoService.registerUser(
+      final userData = await _apiService.register(
         email: email,
         password: password,
         name: name,
       );
 
-      if (userData == null) {
-        throw Exception('Registration failed');
-      }
-
       final user = UserModel.fromJson(userData);
-      await _saveUserSession(user.id);
-      print('✅ Registration successful, saved session for user: ${user.id}');
+      print('✅ Registration successful for user: ${user.id}');
       return user;
     } catch (e) {
       print('❌ Registration error: $e');
@@ -48,18 +41,13 @@ class AuthRepository {
   }) async {
     try {
       print('🔐 Attempting login for: $email');
-      final userData = await _mongoService.loginUser(
+      final userData = await _apiService.login(
         email: email,
         password: password,
       );
 
-      if (userData == null) {
-        throw Exception('Login failed');
-      }
-
       final user = UserModel.fromJson(userData);
-      await _saveUserSession(user.id);
-      print('✅ Login successful, saved session for user: ${user.id}');
+      print('✅ Login successful for user: ${user.id}');
       return user;
     } catch (e) {
       print('❌ Login error: $e');
@@ -69,31 +57,23 @@ class AuthRepository {
 
   // Logout
   Future<void> logout() async {
-    await _secureStorage.delete(key: 'userId');
+    await _apiService.logout();
     print('👋 Logged out, cleared session');
   }
 
   // Check if user is logged in
   Future<bool> isLoggedIn() async {
-    final userId = await _secureStorage.read(key: 'userId');
-    final isLoggedIn = userId != null && userId.isNotEmpty;
-    print('🔍 Auth check: userId=${userId ?? "null"}, isLoggedIn=$isLoggedIn');
+    final isLoggedIn = await _apiService.isLoggedIn();
+    print('🔍 Auth check: isLoggedIn=$isLoggedIn');
     return isLoggedIn;
   }
 
   // Get current user
   Future<UserModel?> getCurrentUser() async {
     try {
-      final userId = await _secureStorage.read(key: 'userId');
-      if (userId == null || userId.isEmpty) {
-        print('⚠️ getCurrentUser: No userId found in storage');
-        return null;
-      }
-
-      print('🔍 Fetching user data for userId: $userId');
-      final userData = await _mongoService.getUserById(userId);
+      final userData = await _apiService.getCurrentUser();
       if (userData == null) {
-        print('⚠️ getCurrentUser: No user found in DB for userId: $userId');
+        print('⚠️ getCurrentUser: No user found');
         return null;
       }
 
@@ -105,29 +85,11 @@ class AuthRepository {
     }
   }
 
-  // Save user session
-  Future<void> _saveUserSession(String userId) async {
-    await _secureStorage.write(key: 'userId', value: userId);
-    print('💾 Saved session for userId: $userId');
-  }
-
   // Update user's name
   Future<UserModel> updateUserName(String newName) async {
     try {
-      final userId = await _secureStorage.read(key: 'userId');
-      if (userId == null || userId.isEmpty) {
-        throw Exception('No user session found');
-      }
-
-      print('📝 Updating name for user: $userId to: $newName');
-      final userData = await _mongoService.updateUserName(
-        userId: userId,
-        newName: newName,
-      );
-
-      if (userData == null) {
-        throw Exception('Failed to update user name');
-      }
+      print('📝 Updating name to: $newName');
+      final userData = await _apiService.updateUserName(newName);
 
       print('✅ Name updated successfully');
       return UserModel.fromJson(userData);
@@ -140,17 +102,8 @@ class AuthRepository {
   // Complete daily streak
   Future<UserModel> completeStreak() async {
     try {
-      final userId = await _secureStorage.read(key: 'userId');
-      if (userId == null || userId.isEmpty) {
-        throw Exception('No user session found');
-      }
-
-      print('🔥 Completing streak for user: $userId');
-      final userData = await _mongoService.updateUserStreak(userId: userId);
-
-      if (userData == null) {
-        throw Exception('Failed to complete streak');
-      }
+      print('🔥 Completing streak');
+      final userData = await _apiService.completeStreak();
 
       print('✅ Streak completed successfully');
       return UserModel.fromJson(userData);
@@ -163,20 +116,8 @@ class AuthRepository {
   // Complete a course
   Future<UserModel> completeCourse(String courseId) async {
     try {
-      final userId = await _secureStorage.read(key: 'userId');
-      if (userId == null || userId.isEmpty) {
-        throw Exception('No user session found');
-      }
-
-      print('📚 Completing course $courseId for user: $userId');
-      final userData = await _mongoService.completeCourse(
-        userId: userId,
-        courseId: courseId,
-      );
-
-      if (userData == null) {
-        throw Exception('Failed to complete course');
-      }
+      print('📚 Completing course $courseId');
+      final userData = await _apiService.completeCourse(courseId);
 
       print('✅ Course completed successfully');
       return UserModel.fromJson(userData);

@@ -15,6 +15,7 @@ class MongoService {
   static DbCollection? _flashCardsCollection;
   static DbCollection? _exerciseSetsCollection;
   static DbCollection? _flashCardDecksCollection;
+  static DbCollection? _userFlashCardProgressCollection;
 
   MongoService._();
 
@@ -43,6 +44,7 @@ class MongoService {
       _flashCardsCollection = _db!.collection('flash_cards');
       _exerciseSetsCollection = _db!.collection('exercise_sets');
       _flashCardDecksCollection = _db!.collection('flash_card_decks');
+      _userFlashCardProgressCollection = _db!.collection('user_flashcard_progress');
       print('MongoDB connected successfully');
     } catch (e) {
       print('MongoDB connection error: $e');
@@ -127,6 +129,17 @@ class MongoService {
 
       user.remove('password'); // Don't return password
       user['_id'] = (user['_id'] as ObjectId).toHexString();
+      final userId = user['_id'];
+
+      // Count learned words
+      if (_userFlashCardProgressCollection == null) {
+        _userFlashCardProgressCollection = _db!.collection('user_flashcard_progress');
+      }
+      
+      final learnedCount = await _userFlashCardProgressCollection!.count(
+        where.eq('odUserId', userId).ne('status', 'newCard'),
+      );
+      user['learnedWordsCount'] = learnedCount;
 
       return user;
     } catch (e) {
@@ -147,6 +160,17 @@ class MongoService {
       if (user != null) {
         user.remove('password');
         user['_id'] = (user['_id'] as ObjectId).toHexString();
+        
+        // Count learned words (status != newCard)
+        // Check if _userFlashCardProgressCollection is initialized, if not, try to initialize
+        if (_userFlashCardProgressCollection == null) {
+          _userFlashCardProgressCollection = _db!.collection('user_flashcard_progress');
+        }
+        
+        final learnedCount = await _userFlashCardProgressCollection!.count(
+          where.eq('odUserId', id).ne('status', 'newCard'),
+        );
+        user['learnedWordsCount'] = learnedCount;
       }
 
       return user;
@@ -294,54 +318,89 @@ class MongoService {
   // EXERCISE FETCH METHODS
   // ============================================================
 
-  // Fetch all reorder exercises
-  Future<List<Map<String, dynamic>>> fetchReorderExercises() async {
+  // Helper to retry operations on connection failure
+  Future<T> _executeWithRetry<T>(Future<T> Function() operation) async {
     try {
-      await connect();
-      final exercises = await _reorderExercisesCollection!.find().toList();
-      return exercises;
+      return await operation();
     } catch (e) {
-      print('Fetch reorder exercises error: $e');
+      final errorStr = e.toString().toLowerCase();
+      if (errorStr.contains('connection') || 
+          errorStr.contains('socket') || 
+          errorStr.contains('closed')) {
+         print('🔄 MongoDB connection lost. Reconnecting...');
+         // Force reconnection
+         try {
+           await _db?.close();
+         } catch (_) {}
+         _db = null;
+         
+         // Retry the operation (which calls connect() internally)
+         return await operation();
+      }
       rethrow;
     }
+  }
+
+  // ============================================================
+  // EXERCISE FETCH METHODS
+  // ============================================================
+
+  // Fetch all reorder exercises
+  Future<List<Map<String, dynamic>>> fetchReorderExercises() async {
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final exercises = await _reorderExercisesCollection!.find().toList();
+        return exercises;
+      } catch (e) {
+        print('Fetch reorder exercises error: $e');
+        rethrow;
+      }
+    });
   }
 
   // Fetch all multiple choice exercises
   Future<List<Map<String, dynamic>>> fetchMultipleChoiceExercises() async {
-    try {
-      await connect();
-      final exercises = await _multipleChoiceExercisesCollection!.find().toList();
-      return exercises;
-    } catch (e) {
-      print('Fetch multiple choice exercises error: $e');
-      rethrow;
-    }
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final exercises = await _multipleChoiceExercisesCollection!.find().toList();
+        return exercises;
+      } catch (e) {
+        print('Fetch multiple choice exercises error: $e');
+        rethrow;
+      }
+    });
   }
 
   // Fetch multiple choice exercises by practice type
   Future<List<Map<String, dynamic>>> fetchMultipleChoiceByType(String practiceType) async {
-    try {
-      await connect();
-      final exercises = await _multipleChoiceExercisesCollection!
-          .find(where.eq('practiceType', practiceType))
-          .toList();
-      return exercises;
-    } catch (e) {
-      print('Fetch multiple choice by type error: $e');
-      rethrow;
-    }
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final exercises = await _multipleChoiceExercisesCollection!
+            .find(where.eq('practiceType', practiceType))
+            .toList();
+        return exercises;
+      } catch (e) {
+        print('Fetch multiple choice by type error: $e');
+        rethrow;
+      }
+    });
   }
 
   // Fetch all fill blank exercises
   Future<List<Map<String, dynamic>>> fetchFillBlankExercises() async {
-    try {
-      await connect();
-      final exercises = await _fillBlankExercisesCollection!.find().toList();
-      return exercises;
-    } catch (e) {
-      print('Fetch fill blank exercises error: $e');
-      rethrow;
-    }
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final exercises = await _fillBlankExercisesCollection!.find().toList();
+        return exercises;
+      } catch (e) {
+        print('Fetch fill blank exercises error: $e');
+        rethrow;
+      }
+    });
   }
 
   // Fetch all flash cards with pagination
@@ -454,6 +513,160 @@ class MongoService {
       return flashCards;
     } catch (e) {
       print('Fetch flash cards by IDs error: $e');
+      rethrow;
+    }
+  }
+
+  // ============================================================
+  // USER FLASHCARD PROGRESS METHODS (SM-2)
+  // ============================================================
+
+  /// Get all progress records for a user in a specific deck
+  /// Get all progress records for a user in a specific deck
+  Future<List<Map<String, dynamic>>> getUserCardProgress({
+    required String userId,
+    required String deckId,
+  }) async {
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final progress = await _userFlashCardProgressCollection!
+            .find(where.eq('odUserId', userId).eq('deckId', deckId))
+            .toList();
+        return progress;
+      } catch (e) {
+        print('Get user card progress error: $e');
+        rethrow;
+      }
+    });
+  }
+
+  /// Get progress for a single card
+  Future<Map<String, dynamic>?> getCardProgress({
+    required String userId,
+    required String flashCardId,
+  }) async {
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+        final progress = await _userFlashCardProgressCollection!.findOne(
+          where.eq('odUserId', userId).eq('flashCardId', flashCardId),
+        );
+        return progress;
+      } catch (e) {
+        print('Get card progress error: $e');
+        rethrow;
+      }
+    });
+  }
+
+  /// Create or update card progress
+  Future<Map<String, dynamic>?> upsertCardProgress({
+    required String userId,
+    required String deckId,
+    required String flashCardId,
+    required Map<String, dynamic> progressData,
+  }) async {
+    return _executeWithRetry(() async {
+      try {
+        await connect();
+
+        // Check if progress exists
+        final existing = await _userFlashCardProgressCollection!.findOne(
+          where.eq('odUserId', userId).eq('flashCardId', flashCardId),
+        );
+
+        if (existing != null) {
+          // Update existing
+          await _userFlashCardProgressCollection!.update(
+            where.eq('_id', existing['_id']),
+            {r'$set': progressData},
+          );
+          return await _userFlashCardProgressCollection!.findOne(
+            where.eq('_id', existing['_id']),
+          );
+        } else {
+          // Insert new
+          final newProgress = {
+            'odUserId': userId,
+            'deckId': deckId,
+            'flashCardId': flashCardId,
+            ...progressData,
+          };
+          await _userFlashCardProgressCollection!.insert(newProgress);
+          return await _userFlashCardProgressCollection!.findOne(
+            where.eq('odUserId', userId).eq('flashCardId', flashCardId),
+          );
+        }
+      } catch (e) {
+        print('Upsert card progress error: $e');
+        rethrow;
+      }
+    });
+  }
+
+  /// Get aggregated statistics for a deck
+  Future<Map<String, int>> getDeckProgressStats({
+    required String userId,
+    required String deckId,
+    required int totalCards,
+  }) async {
+    try {
+      await connect();
+
+      final progressList = await getUserCardProgress(
+        userId: userId,
+        deckId: deckId,
+      );
+
+      int newCount = 0;
+      int learningCount = 0;
+      int reviewingCount = 0;
+      int masteredCount = 0;
+      int dueCount = 0;
+      final now = DateTime.now();
+
+      for (final progress in progressList) {
+        final status = progress['status'] as String? ?? 'newCard';
+        switch (status) {
+          case 'newCard':
+            newCount++;
+            break;
+          case 'learning':
+            learningCount++;
+            break;
+          case 'reviewing':
+            reviewingCount++;
+            break;
+          case 'mastered':
+            masteredCount++;
+            break;
+        }
+
+        // Check if due for review
+        final nextReviewStr = progress['nextReviewDate'] as String?;
+        if (nextReviewStr != null) {
+          final nextReview = DateTime.parse(nextReviewStr);
+          if (now.isAfter(nextReview)) {
+            dueCount++;
+          }
+        }
+      }
+
+      // Cards with no progress record are 'new'
+      final trackedCards = progressList.length;
+      final untrackedNewCards = totalCards - trackedCards;
+      newCount += untrackedNewCards;
+
+      return {
+        'newCount': newCount,
+        'learningCount': learningCount,
+        'reviewingCount': reviewingCount,
+        'masteredCount': masteredCount,
+        'dueForReviewCount': dueCount,
+      };
+    } catch (e) {
+      print('Get deck progress stats error: $e');
       rethrow;
     }
   }

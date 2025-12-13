@@ -8,8 +8,29 @@ import '../../../style/app_colors.dart';
 import '../../../style/app_sizes.dart';
 import '../../../style/app_styles.dart';
 
-class ProfileScreen extends StatelessWidget {
+class ProfileScreen extends StatefulWidget {
   const ProfileScreen({super.key});
+
+  @override
+  State<ProfileScreen> createState() => _ProfileScreenState();
+}
+
+class _ProfileScreenState extends State<ProfileScreen> {
+  @override
+  void initState() {
+    super.initState();
+    // Refresh user data when profile is opened
+    context.read<AuthBloc>().add(AuthRefreshRequested());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return const ProfileContent();
+  }
+}
+
+class ProfileContent extends StatelessWidget {
+  const ProfileContent({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -335,9 +356,9 @@ class ProfileScreen extends StatelessWidget {
             color: isDark ? Colors.white24 : Colors.grey.shade200,
           ),
           _buildStatItem(
-            value: '145',
-            label: 'Points',
-            icon: Icons.star,
+            value: '${user.learnedWordsCount}',
+            label: 'Words Learned',
+            icon: Icons.school_rounded, // Changed icon to represent learning
             color: AppColors.warning,
             textColor: textColor,
           ),

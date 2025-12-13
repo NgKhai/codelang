@@ -1,16 +1,19 @@
+// lib/data/services/multiple_choice_service.dart
+// Updated to use REST API instead of direct MongoDB
+
 import '../models/exercise/multiple_choice_exercise.dart';
-import 'mongo_service.dart';
+import 'api_service.dart';
 
 class MultipleChoiceService {
-  static final MongoService _mongoService = MongoService.instance;
+  static final ApiService _apiService = ApiService.instance;
 
   static Future<List<MultipleChoiceExercise>> getExercises() async {
-    final data = await _mongoService.fetchMultipleChoiceExercises();
+    final data = await _apiService.fetchMultipleChoiceExercises();
     return data.map((json) => MultipleChoiceExercise.fromJson(json)).toList();
   }
 
   static Future<List<MultipleChoiceExercise>> getExercisesByType(String practiceType) async {
-    final data = await _mongoService.fetchMultipleChoiceByType(practiceType);
+    final data = await _apiService.fetchMultipleChoiceByType(practiceType);
     return data.map((json) => MultipleChoiceExercise.fromJson(json)).toList();
   }
 
