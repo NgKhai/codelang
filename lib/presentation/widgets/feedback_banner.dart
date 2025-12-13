@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-
-import '../../business/bloc/shared/feedback_type.dart';
+import '../../business/bloc/unified_exercise/unified_exercise_state.dart';
 import '../../style/app_colors.dart';
 
 

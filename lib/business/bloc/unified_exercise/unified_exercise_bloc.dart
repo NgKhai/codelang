@@ -7,7 +7,6 @@ import '../../../data/services/unified_exercise_service.dart';
 import '../../../data/services/exercise_service.dart';
 import '../../../data/services/multiple_choice_service.dart';
 import '../../../data/services/fill_blank_service.dart';
-import '../shared/feedback_type.dart';
 import 'unified_exercise_event.dart';
 import 'unified_exercise_state.dart';
 

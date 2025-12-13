@@ -1,9 +1,6 @@
-// lib/business/bloc/unified_exercise/unified_exercise_state.dart
-
 import 'package:equatable/equatable.dart';
 import '../../../data/models/exercise/unified_exercise.dart';
 import '../../../data/models/exercise/reorder_exercise.dart';
-import '../shared/feedback_type.dart';
 
 enum UnifiedExerciseStatus {
   initial,
@@ -13,6 +10,14 @@ enum UnifiedExerciseStatus {
   correct,
   incorrect,
   completed
+}
+
+enum FeedbackType {
+  initial,
+  info,
+  warning,
+  error,
+  success
 }
 
 class UnifiedExerciseState extends Equatable {
