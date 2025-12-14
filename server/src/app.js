@@ -14,6 +14,7 @@ const userRoutes = require('./routes/users');
 const exerciseRoutes = require('./routes/exercises');
 const flashcardRoutes = require('./routes/flashcards');
 const progressRoutes = require('./routes/progress');
+const alcRoutes = require('./routes/alc');
 
 // Import error handler
 const errorHandler = require('./middleware/errorHandler');
@@ -61,6 +62,7 @@ app.use('/api/users', userRoutes);
 app.use('/api/exercises', exerciseRoutes);
 app.use('/api/flashcards', flashcardRoutes);
 app.use('/api/progress', progressRoutes);
+app.use('/api/alc', alcRoutes);
 
 // 404 handler
 app.use((req, res) => {

@@ -505,4 +505,36 @@ class ApiService {
       ),
     );
   }
+
+  // ============================================================
+  // ACTIVE LINGO COACH (ALC)
+  // ============================================================
+  
+  /// Analyze text and get professional improvement suggestions
+  /// No authentication required
+  Future<Map<String, dynamic>> analyzeTextWithAlc(
+    String text, {
+    String? communicationType,
+  }) async {
+    try {
+      final body = <String, dynamic>{
+        'text': text,
+      };
+      
+      if (communicationType != null) {
+        body['communicationType'] = communicationType;
+      }
+      
+      final response = await http.post(
+        Uri.parse('$baseUrl/alc/analyze'),
+        headers: _getHeaders(),
+        body: jsonEncode(body),
+      );
+      
+      return _handleResponse(response);
+    } catch (e) {
+      print('❌ ALC analyze error: $e');
+      rethrow;
+    }
+  }
 }

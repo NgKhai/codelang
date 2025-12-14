@@ -130,6 +130,7 @@ import '../business/bloc/auth/auth_bloc.dart';
 import '../business/bloc/auth/auth_state.dart';
 import '../presentation/screens/main_screen.dart';
 import '../presentation/screens/profile/profile_screen.dart';
+import '../presentation/screens/alc/alc_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -182,20 +183,58 @@ class AppRouter {
           routes: [
             GoRoute(
               path: '/',
-              pageBuilder: (context, state) => NoTransitionPage(
+              pageBuilder: (context, state) => CustomTransitionPage(
+                key: state.pageKey,
                 child: HomeScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 200),
               ),
             ),
             GoRoute(
               path: '/flash-card',
-              pageBuilder: (context, state) => NoTransitionPage(
+              pageBuilder: (context, state) => CustomTransitionPage(
+                key: state.pageKey,
                 child: FlashCardDeckScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 200),
               ),
             ),
             GoRoute(
               path: '/profile',
-              pageBuilder: (context, state) => NoTransitionPage(
+              pageBuilder: (context, state) => CustomTransitionPage(
+                key: state.pageKey,
                 child: ProfileScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 200),
+              ),
+            ),
+            GoRoute(
+              path: '/alc',
+              pageBuilder: (context, state) => CustomTransitionPage(
+                key: state.pageKey,
+                child: AlcScreen(),
+                transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                  return FadeTransition(
+                    opacity: CurveTween(curve: Curves.easeInOut).animate(animation),
+                    child: child,
+                  );
+                },
+                transitionDuration: const Duration(milliseconds: 200),
               ),
             ),
           ],

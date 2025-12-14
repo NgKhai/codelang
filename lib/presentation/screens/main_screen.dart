@@ -131,6 +131,9 @@ class MainScreenContent extends StatelessWidget {
         context.go(AppRoutes.flashCard);
         break;
       case 2:
+        context.go(AppRoutes.alc);
+        break;
+      case 3:
         context.go(AppRoutes.profile);
         break;
     }
@@ -140,7 +143,8 @@ class MainScreenContent extends StatelessWidget {
     final String location = GoRouterState.of(context).uri.path;
     if (location == AppRoutes.home) return 0;
     if (location == AppRoutes.flashCard) return 1;
-    if (location == AppRoutes.profile) return 2;
+    if (location == AppRoutes.alc) return 2;
+    if (location == AppRoutes.profile) return 3;
     return 0;
   }
 
@@ -181,9 +185,14 @@ class MainScreenContent extends StatelessWidget {
                       onTap: () => _onTap(context, 1),
                     ),
                     _NavBarItem(
-                      icon: Icons.person,
+                      icon: Icons.auto_awesome,
                       isSelected: currentIndex == 2,
                       onTap: () => _onTap(context, 2),
+                    ),
+                    _NavBarItem(
+                      icon: Icons.person,
+                      isSelected: currentIndex == 3,
+                      onTap: () => _onTap(context, 3),
                     ),
                   ],
                 ),
