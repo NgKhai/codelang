@@ -4,6 +4,7 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:http/http.dart' as http;
 
 class ApiService {
@@ -15,7 +16,10 @@ class ApiService {
   // For iOS simulator use: http://localhost:3000
   // For physical device use: http://YOUR_IP:3000
   // For production use: https://your-server.com
-  static const String baseUrl = 'http://10.0.2.2:3000/api';
+  // For production use: https://your-server.com
+  static String get baseUrl {
+    return dotenv.env['API_URL'] ?? 'http://10.0.2.2:3000/api';
+  }
   
   ApiService._();
   

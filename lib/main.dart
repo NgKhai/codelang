@@ -2,6 +2,7 @@ import 'package:codelang/style/app_router.dart';
 import 'package:codelang/style/app_themes.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
+import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
 
 import 'business/bloc/auth/auth_bloc.dart';
@@ -17,6 +18,9 @@ import 'data/services/theme_service.dart';
 void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
+
+  // Load environment variables
+  await dotenv.load(fileName: ".env");
 
   // Initialize Hive for offline storage
   await OfflineStorageService.initialize();
