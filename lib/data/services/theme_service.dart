@@ -17,11 +17,11 @@ class ThemeLocalDataSource {
       } else if (savedMode == 'dark') {
         return ThemeMode.dark;
       }
-      return ThemeMode.system; // Default
+      return ThemeMode.dark; // Default
     } catch (e) {
       // Log error and return system default if storage fails
       debugPrint('Error loading theme mode: $e');
-      return ThemeMode.system;
+      return ThemeMode.dark;
     }
   }
 

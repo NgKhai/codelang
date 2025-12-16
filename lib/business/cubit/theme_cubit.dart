@@ -7,7 +7,7 @@ class ThemeCubit extends Cubit<ThemeMode> {
   final ThemeLocalDataSource _dataSource;
 
   // Initialize with system default and load persisted value
-  ThemeCubit(this._dataSource) : super(ThemeMode.system) {
+  ThemeCubit(this._dataSource) : super(ThemeMode.dark) {
     _loadInitialTheme();
   }
 
