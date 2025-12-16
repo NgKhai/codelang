@@ -1,3 +1,4 @@
+import 'package:codelang/data/models/flashcard/flash_card.dart';
 import 'package:equatable/equatable.dart';
 
 abstract class FlashCardEvent extends Equatable {
@@ -17,6 +18,17 @@ class LoadFlashCards extends FlashCardEvent {
   List<Object?> get props => [deckId, shuffle];
 }
 
+/// Event for loading pre-loaded flash cards (offline/view mode)
+class LoadOfflineFlashCards extends FlashCardEvent {
+  final List<FlashCard> flashCards;
+  final bool shuffle;
+
+  const LoadOfflineFlashCards({required this.flashCards, this.shuffle = false});
+
+  @override
+  List<Object?> get props => [flashCards, shuffle];
+}
+
 class LoadMoreFlashCards extends FlashCardEvent {
   final String? deckId;
   
@@ -26,9 +38,7 @@ class LoadMoreFlashCards extends FlashCardEvent {
   List<Object?> get props => [deckId];
 }
 
-class RefreshFlashCards extends FlashCardEvent {
-  const RefreshFlashCards();
-}
+
 
 class SpeakFlashCardWord extends FlashCardEvent {
   final String word;

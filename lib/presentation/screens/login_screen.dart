@@ -1,5 +1,6 @@
 // lib/presentation/screens/login_screen.dart
 
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -7,6 +8,9 @@ import 'package:go_router/go_router.dart';
 import '../../business/bloc/auth/auth_bloc.dart';
 import '../../business/bloc/auth/auth_event.dart';
 import '../../business/bloc/auth/auth_state.dart';
+import '../../business/bloc/offline/offline_bloc.dart';
+import '../../business/bloc/offline/offline_state.dart';
+import '../../data/services/connectivity_service.dart';
 import '../../style/app_colors.dart';
 import '../../style/app_sizes.dart';
 import '../../style/app_styles.dart';
@@ -23,11 +27,25 @@ class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
   bool _obscurePassword = true;
+  bool _isOnline = true;
+  StreamSubscription<bool>? _connectivitySubscription;
+
+  @override
+  void initState() {
+    super.initState();
+    _isOnline = ConnectivityService().isOnline;
+    _connectivitySubscription = ConnectivityService().connectivityStream.listen((online) {
+      if (mounted) {
+        setState(() => _isOnline = online);
+      }
+    });
+  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _connectivitySubscription?.cancel();
     super.dispose();
   }
 
@@ -264,6 +282,108 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                           ),
                         ],
+                      ),
+
+                      const SizedBox(height: AppSizes.p16),
+
+                      // Divider
+                      Row(
+                        children: [
+                          Expanded(child: Divider(color: AppColors.textSecondary.withOpacity(0.3))),
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: Text(
+                              'or',
+                              style: TextStyle(color: AppColors.textSecondary),
+                            ),
+                          ),
+                          Expanded(child: Divider(color: AppColors.textSecondary.withOpacity(0.3))),
+                        ],
+                      ),
+
+                      const SizedBox(height: AppSizes.p16),
+
+                      // Continue as Guest Button
+                      SizedBox(
+                        height: AppSizes.buttonHeight,
+                        child: OutlinedButton.icon(
+                          onPressed: isLoading
+                              ? null
+                              : () {
+                                  context.read<AuthBloc>().add(const AuthGuestRequested());
+                                },
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.textSecondary,
+                            side: BorderSide(color: AppColors.textSecondary.withOpacity(0.3)),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+                            ),
+                          ),
+                          icon: const Icon(Icons.person_outline),
+                          label: const Text(
+                            'Continue as Guest',
+                            style: TextStyle(fontSize: 16),
+                          ),
+                        ),
+                      ),
+
+                      // Offline Mode Button (only shown when offline and has downloads)
+                      if (!_isOnline) ...[
+                        const SizedBox(height: AppSizes.p16),
+                        BlocBuilder<OfflineBloc, OfflineState>(
+                          builder: (context, offlineState) {
+                            final hasDownloads = offlineState.downloadedCourses.isNotEmpty ||
+                                offlineState.downloadedDecks.isNotEmpty;
+                            
+                            if (!hasDownloads) return const SizedBox.shrink();
+                            
+                            return SizedBox(
+                              height: AppSizes.buttonHeight,
+                              child: ElevatedButton.icon(
+                                onPressed: isLoading
+                                    ? null
+                                    : () {
+                                        context.read<AuthBloc>().add(const AuthOfflineRequested());
+                                      },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.warning,
+                                  foregroundColor: Colors.white,
+                                  shape: RoundedRectangleBorder(
+                                    borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+                                  ),
+                                ),
+                                icon: const Icon(Icons.cloud_off),
+                                label: const Text(
+                                  'Use Offline Mode',
+                                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            );
+                          },
+                        ),
+                      ],
+
+                      // Connectivity Status Indicator
+                      const SizedBox(height: AppSizes.p16),
+                      Center(
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(
+                              _isOnline ? Icons.wifi : Icons.wifi_off,
+                              size: 16,
+                              color: _isOnline ? AppColors.success : AppColors.error,
+                            ),
+                            const SizedBox(width: 8),
+                            Text(
+                              _isOnline ? 'Connected' : 'No Internet Connection',
+                              style: TextStyle(
+                                fontSize: 12,
+                                color: _isOnline ? AppColors.success : AppColors.error,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
                     ],
                   ),

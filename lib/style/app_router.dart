@@ -131,6 +131,7 @@ import '../business/bloc/auth/auth_state.dart';
 import '../presentation/screens/main_screen.dart';
 import '../presentation/screens/profile/profile_screen.dart';
 import '../presentation/screens/alc/alc_screen.dart';
+import '../presentation/screens/offline/downloaded_content_screen.dart';
 
 class AppRouter {
   static final GlobalKey<NavigatorState> _rootNavigatorKey = GlobalKey<NavigatorState>(debugLabel: 'root');
@@ -142,11 +143,14 @@ class AppRouter {
       initialLocation: '/login',
       redirect: (context, state) {
         final authState = authBloc.state;
-        final isAuthenticated = authState is AuthAuthenticated;
+        // Allow authenticated users, guests, and offline users
+        final isAuthenticated = authState is AuthAuthenticated || 
+                               authState is AuthGuest || 
+                               authState is AuthOffline;
         final isAuthRoute = state.matchedLocation == '/login' ||
             state.matchedLocation == '/register';
 
-        // If authenticated and trying to access auth pages, redirect to home
+        // If authenticated (including guest/offline) and trying to access auth pages, redirect to home
         if (isAuthenticated && isAuthRoute) {
           return '/';
         }
@@ -273,6 +277,13 @@ class AppRouter {
             final deckName = extra?['deckName'] as String?;
             return FlashCardPracticeScreen(deckId: deckId, deckName: deckName);
           },
+        ),
+
+        // Downloaded content route
+        GoRoute(
+          parentNavigatorKey: _rootNavigatorKey,
+          path: '/downloaded-content',
+          builder: (context, state) => const DownloadedContentScreen(),
         ),
       ],
     );

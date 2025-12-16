@@ -5,11 +5,18 @@ import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
 
 import '../../../business/bloc/auth/auth_bloc.dart';
 import '../../../business/bloc/auth/auth_state.dart';
+import '../../../business/bloc/offline/offline_bloc.dart';
+import '../../../business/bloc/offline/offline_event.dart';
+import '../../../business/bloc/offline/offline_state.dart';
 import '../../../data/models/course/course.dart';
+import '../../../data/models/exercise/unified_exercise.dart';
+import '../../../data/models/offline/offline_course.dart';
+import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/unified_exercise_service.dart';
 import '../../../style/app_colors.dart';
 import '../../../style/app_routes.dart';
 import '../../../style/app_styles.dart';
+import 'unified_exercise_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -40,6 +47,13 @@ class _HomeScreenState extends State<HomeScreen>
     super.dispose();
   }
 
+  /// Check if we should use offline mode (AuthOffline state OR no connectivity)
+  bool _shouldUseOfflineMode(BuildContext context) {
+    final authState = context.read<AuthBloc>().state;
+    if (authState is AuthOffline) return true;
+    return !ConnectivityService().isOnline;
+  }
+
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
@@ -50,6 +64,9 @@ class _HomeScreenState extends State<HomeScreen>
         ? const Color(0xFF121212)
         : const Color(0xFFF5F7FA);
 
+    final authState = context.watch<AuthBloc>().state;
+    final isOfflineMode = authState is AuthOffline || !ConnectivityService().isOnline;
+
     return Scaffold(
       backgroundColor: backgroundColor,
       body: CustomScrollView(
@@ -57,88 +74,188 @@ class _HomeScreenState extends State<HomeScreen>
         physics: const BouncingScrollPhysics(),
         slivers: [
           _buildSliverAppBar(context, isDark, backgroundColor),
-          SliverToBoxAdapter(
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
-              child: _buildDailyChallengeCard(context, isDark),
+
+          // Offline Mode Banner
+          if (isOfflineMode)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.cloud_off, color: AppColors.warning, size: 20),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        'Offline Mode - Showing downloaded content',
+                        style: TextStyle(
+                          color: AppColors.warning,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
             ),
-          ),
+
+          if (!isOfflineMode)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 16, 16, 8),
+                child: _buildDailyChallengeCard(context, isDark),
+              ),
+            ),
+
           SliverPadding(
             padding: const EdgeInsets.all(16),
-            sliver: FutureBuilder<List<Course>>(
-              future: UnifiedExerciseService.getAllCourses(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const SliverToBoxAdapter(
-                    child: Center(
-                      child: Padding(
-                        padding: EdgeInsets.all(40),
-                        child: CircularProgressIndicator(),
-                      ),
-                    ),
-                  );
-                }
-
-                if (snapshot.hasError) {
-                  return SliverToBoxAdapter(
-                    child: Center(
-                      child: Padding(
-                        padding: const EdgeInsets.all(40),
-                        child: Column(
-                          children: [
-                            Icon(Icons.error_outline, size: 48, color: Colors.red[300]),
-                            const SizedBox(height: 16),
-                            Text(
-                              'Failed to load courses',
-                              style: TextStyle(color: isDark ? Colors.white70 : Colors.black54),
-                            ),
-                            const SizedBox(height: 8),
-                            Text(
-                              '${snapshot.error}',
-                              style: TextStyle(fontSize: 12, color: isDark ? Colors.white38 : Colors.black38),
-                              textAlign: TextAlign.center,
-                            ),
-                          ],
-                        ),
-                      ),
-                    ),
-                  );
-                }
-
-                final courses = snapshot.data ?? [];
-
-                if (courses.isEmpty) {
-                  return SliverToBoxAdapter(child: _buildEmptyState());
-                }
-
-                return AnimationLimiter(
-                  child: SliverList(
-                    delegate: SliverChildBuilderDelegate((context, index) {
-                      final course = courses[index];
-                      return AnimationConfiguration.staggeredList(
-                        position: index,
-                        duration: const Duration(milliseconds: 500),
-                        child: SlideAnimation(
-                          verticalOffset: 50.0,
-                          child: FadeInAnimation(
-                            child: _buildCourseCard(
-                              context,
-                              course,
-                              index,
-                              isDark,
-                            ),
-                          ),
-                        ),
-                      );
-                    }, childCount: courses.length),
-                  ),
-                );
-              },
-            ),
+            sliver: isOfflineMode
+                ? _buildOfflineCoursesList(isDark)
+                : _buildOnlineCoursesList(isDark),
           ),
           const SliverPadding(padding: EdgeInsets.only(bottom: 20)),
         ],
       ),
+    );
+  }
+
+  /// Build courses list from downloaded offline content
+  Widget _buildOfflineCoursesList(bool isDark) {
+    return BlocBuilder<OfflineBloc, OfflineState>(
+      builder: (context, offlineState) {
+        final downloadedCourses = offlineState.downloadedCourses;
+
+        if (downloadedCourses.isEmpty) {
+          return SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(40),
+                child: Column(
+                  children: [
+                    Icon(Icons.cloud_download_outlined, size: 64, color: Colors.grey[400]),
+                    const SizedBox(height: 16),
+                    Text(
+                      'No Downloaded Courses',
+                      style: TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.white70 : Colors.black54,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      'Download courses while online to access them offline',
+                      style: TextStyle(
+                        fontSize: 14,
+                        color: isDark ? Colors.white38 : Colors.black38,
+                      ),
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          );
+        }
+
+        return AnimationLimiter(
+          child: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final offlineCourse = downloadedCourses[index];
+              // Convert OfflineCourse to Course for display
+              final course = _convertOfflineToCourse(offlineCourse);
+              
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 500),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(
+                    child: _buildCourseCard(
+                      context,
+                      course,
+                      index,
+                      isDark,
+                    ),
+                  ),
+                ),
+              );
+            }, childCount: downloadedCourses.length),
+          ),
+        );
+      },
+    );
+  }
+
+  /// Convert OfflineCourse to Course model for display
+  Course _convertOfflineToCourse(OfflineCourse offlineCourse) {
+    // Parse exercises from JSON
+    final exercisesData = offlineCourse.exercisesData;
+    final exercises = UnifiedExerciseService.parseExercises(exercisesData);
+    
+    return Course(
+      id: offlineCourse.id,
+      name: offlineCourse.name,
+      exercises: exercises,
+    );
+  }
+
+  /// Build courses list from online API
+  Widget _buildOnlineCoursesList(bool isDark) {
+    return FutureBuilder<List<Course>>(
+      future: UnifiedExerciseService.getAllCourses(),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const SliverToBoxAdapter(
+            child: Center(
+              child: Padding(
+                padding: EdgeInsets.all(40),
+                child: CircularProgressIndicator(),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          // If online fetch fails, try to show offline content
+          return _buildOfflineCoursesList(isDark);
+        }
+
+        final courses = snapshot.data ?? [];
+
+        if (courses.isEmpty) {
+          return SliverToBoxAdapter(child: _buildEmptyState());
+        }
+
+        return AnimationLimiter(
+          child: SliverList(
+            delegate: SliverChildBuilderDelegate((context, index) {
+              final course = courses[index];
+              return AnimationConfiguration.staggeredList(
+                position: index,
+                duration: const Duration(milliseconds: 500),
+                child: SlideAnimation(
+                  verticalOffset: 50.0,
+                  child: FadeInAnimation(
+                    child: _buildCourseCard(
+                      context,
+                      course,
+                      index,
+                      isDark,
+                    ),
+                  ),
+                ),
+              );
+            }, childCount: courses.length),
+          ),
+        );
+      },
     );
   }
 
@@ -362,106 +479,227 @@ class _HomeScreenState extends State<HomeScreen>
             ? authState.user.hasCourseCompleted(course.id)
             : false;
 
-        return Hero(
-          tag: 'course_${course.id}',
-          child: Material(
-            color: Colors.transparent,
-            child: Container(
-              margin: const EdgeInsets.only(bottom: 16),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(24),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: InkWell(
-                onTap: () => context.push(
-                  AppRoutes.subHome,
-                  extra: {'exerciseId': course.id},
-                ),
-                borderRadius: BorderRadius.circular(24),
-                child: Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 64,
-                        height: 64,
-                        decoration: BoxDecoration(
-                          color: color.withOpacity(0.1),
-                          borderRadius: BorderRadius.circular(20),
-                        ),
-                        child: Icon(icon, size: 32, color: color),
+        return BlocBuilder<OfflineBloc, OfflineState>(
+          builder: (context, offlineState) {
+            final isDownloaded = offlineState.isCourseDownloaded(course.id);
+            final isDownloading = offlineState.isDownloading(course.id);
+            final hasUpdate = offlineState.courseHasUpdate(course.id);
+
+            return Hero(
+              tag: 'course_${course.id}',
+              child: Material(
+                color: Colors.transparent,
+                child: Container(
+                  margin: const EdgeInsets.only(bottom: 16),
+                  decoration: BoxDecoration(
+                    color: cardColor,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
                       ),
-                      const SizedBox(width: 20),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              course.name,
-                              style: TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold,
-                                color: textColor,
-                              ),
+                    ],
+                  ),
+                  child: InkWell(
+                    onTap: () {
+                      // Check if we're in offline mode
+                      final authState = context.read<AuthBloc>().state;
+                      final isOfflineMode = authState is AuthOffline || !ConnectivityService().isOnline;
+                      
+                      if (isOfflineMode) {
+                        // Navigate with pre-loaded exercises for offline mode
+                        Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (context) => UnifiedExerciseScreen(
+                              exerciseSetId: course.id,
+                              exercises: course.exercises,
                             ),
-                            const SizedBox(height: 8),
-                            Row(
-                            children: [
-                              Icon(
-                                Icons.assignment_rounded,
-                                size: 16,
-                                color: textColor.withOpacity(0.5),
-                              ),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${course.exercises.length} Tasks',
-                                style: TextStyle(
-                                  fontSize: 14,
-                                  color: textColor.withOpacity(0.5),
-                                  fontWeight: FontWeight.w500,
-                                ),
-                              ),
-                              const SizedBox(width: 12),
-                              _buildDifficultyBadge(index),
-                            ],
                           ),
+                        );
+                      } else {
+                        // Normal online navigation
+                        context.push(
+                          AppRoutes.subHome,
+                          extra: {'exerciseId': course.id},
+                        );
+                      }
+                    },
+                    borderRadius: BorderRadius.circular(24),
+                    child: Padding(
+                      padding: const EdgeInsets.all(20),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 64,
+                            height: 64,
+                            decoration: BoxDecoration(
+                              color: color.withOpacity(0.1),
+                              borderRadius: BorderRadius.circular(20),
+                            ),
+                            child: Icon(icon, size: 32, color: color),
+                          ),
+                          const SizedBox(width: 20),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  course.name,
+                                  style: TextStyle(
+                                    fontSize: 18,
+                                    fontWeight: FontWeight.bold,
+                                    color: textColor,
+                                  ),
+                                ),
+                                const SizedBox(height: 8),
+                                Row(
+                                  children: [
+                                    Icon(
+                                      Icons.assignment_rounded,
+                                      size: 16,
+                                      color: textColor.withOpacity(0.5),
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      '${course.exercises.length} Tasks',
+                                      style: TextStyle(
+                                        fontSize: 14,
+                                        color: textColor.withOpacity(0.5),
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    _buildDifficultyBadge(index),
+                                  ],
+                                ),
+                              ],
+                            ),
+                          ),
+                          // Download button
+                          _buildDownloadButton(
+                            context: context,
+                            isDownloaded: isDownloaded,
+                            isDownloading: isDownloading,
+                            hasUpdate: hasUpdate,
+                            onDownload: () => _downloadCourse(context, course),
+                          ),
+                          const SizedBox(width: 8),
+                          if (isCompleted)
+                            Container(
+                              padding: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                color: AppColors.success.withOpacity(0.1),
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_rounded,
+                                color: AppColors.success,
+                                size: 24,
+                              ),
+                            )
+                          else
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: textColor.withOpacity(0.3),
+                              size: 28,
+                            ),
                         ],
                       ),
                     ),
-                    if (isCompleted)
-                      Container(
-                        padding: const EdgeInsets.all(8),
-                        decoration: BoxDecoration(
-                          color: AppColors.success.withOpacity(0.1),
-                          shape: BoxShape.circle,
-                        ),
-                        child: const Icon(
-                          Icons.check_rounded,
-                          color: AppColors.success,
-                          size: 24,
-                        ),
-                      )
-                    else
-                      Icon(
-                        Icons.chevron_right_rounded,
-                        color: textColor.withOpacity(0.3),
-                        size: 28,
-                      ),
-                  ],
+                  ),
                 ),
               ),
-              ),
-            ),
-          ),
+            );
+          },
         );
       },
+    );
+  }
+
+  Widget _buildDownloadButton({
+    required BuildContext context,
+    required bool isDownloaded,
+    required bool isDownloading,
+    required bool hasUpdate,
+    required VoidCallback onDownload,
+  }) {
+    if (isDownloading) {
+      return const SizedBox(
+        width: 24,
+        height: 24,
+        child: CircularProgressIndicator(strokeWidth: 2),
+      );
+    }
+
+    if (isDownloaded && hasUpdate) {
+      return GestureDetector(
+        onTap: onDownload,
+        child: Container(
+          padding: const EdgeInsets.all(6),
+          decoration: BoxDecoration(
+            color: AppColors.warning.withOpacity(0.1),
+            shape: BoxShape.circle,
+          ),
+          child: Icon(
+            Icons.sync_rounded,
+            color: AppColors.warning,
+            size: 20,
+          ),
+        ),
+      );
+    }
+
+    if (isDownloaded) {
+      return Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppColors.success.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.download_done_rounded,
+          color: AppColors.success,
+          size: 20,
+        ),
+      );
+    }
+
+    return GestureDetector(
+      onTap: onDownload,
+      child: Container(
+        padding: const EdgeInsets.all(6),
+        decoration: BoxDecoration(
+          color: AppColors.primary.withOpacity(0.1),
+          shape: BoxShape.circle,
+        ),
+        child: Icon(
+          Icons.download_rounded,
+          color: AppColors.primary,
+          size: 20,
+        ),
+      ),
+    );
+  }
+
+  void _downloadCourse(BuildContext context, Course course) {
+    // Convert exercises to JSON for storage using the centralized helper
+    final exercisesData = UnifiedExerciseService.serializeExercises(course.exercises);
+
+    context.read<OfflineBloc>().add(DownloadCourse(
+      courseId: course.id,
+      courseName: course.name,
+      exercisesData: exercisesData,
+    ));
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text('Downloading "${course.name}"...'),
+        backgroundColor: AppColors.primary,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+      ),
     );
   }
 

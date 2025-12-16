@@ -2,11 +2,16 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../../business/bloc/flash_card_stats/flash_card_stats_bloc.dart';
-import '../../../business/bloc/flash_card_stats/flash_card_stats_event.dart';
-import '../../../business/bloc/flash_card_stats/flash_card_stats_state.dart';
-import '../../../data/models/flashcard/deck_statistics.dart';
-import '../../../style/app_colors.dart';
+import '../../business/bloc/auth/auth_bloc.dart';
+import '../../business/bloc/auth/auth_state.dart';
+import '../../business/bloc/flash_card_stats/flash_card_stats_bloc.dart';
+import '../../business/bloc/flash_card_stats/flash_card_stats_event.dart';
+import '../../business/bloc/flash_card_stats/flash_card_stats_state.dart';
+import '../../business/bloc/offline/offline_bloc.dart';
+import '../../business/bloc/offline/offline_state.dart';
+import '../../data/models/flashcard/deck_statistics.dart';
+import '../../data/services/connectivity_service.dart';
+import '../../style/app_colors.dart';
 
 /// Bottom sheet that displays deck statistics and allows starting practice
 class DeckStatsBottomSheet extends StatelessWidget {
@@ -45,80 +50,119 @@ class DeckStatsBottomSheet extends StatelessWidget {
       ),
       child: BlocBuilder<FlashCardStatsBloc, FlashCardStatsState>(
         builder: (context, state) {
-          return Padding(
-            padding: const EdgeInsets.all(24),
-            child: Column(
-              mainAxisSize: MainAxisSize.min,
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                // Handle bar
-                Center(
-                  child: Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.grey.shade300,
-                      borderRadius: BorderRadius.circular(2),
+          return BlocBuilder<OfflineBloc, OfflineState>(
+            builder: (context, offlineState) {
+              final isDownloaded = offlineState.isDeckDownloaded(deckId);
+              final isOffline = !ConnectivityService().isOnline;
+              
+              // Practice is only available for registered users online
+              
+              // Practice is only available for registered users online
+              final authState = context.read<AuthBloc>().state;
+              final canPractice = authState is AuthAuthenticated && !isOffline;
+
+              return Padding(
+                padding: const EdgeInsets.all(24),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    // Handle bar
+                    Center(
+                      child: Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.grey.shade300,
+                          borderRadius: BorderRadius.circular(2),
+                        ),
+                      ),
                     ),
-                  ),
+                    const SizedBox(height: 20),
+
+                    // Title with offline indicator
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Flexible(
+                          child: Text(
+                            deckName,
+                            style: TextStyle(
+                              fontSize: 24,
+                              fontWeight: FontWeight.bold,
+                              color: textColor,
+                            ),
+                            textAlign: TextAlign.center,
+                          ),
+                        ),
+                        if (isDownloaded) ...[
+                          const SizedBox(width: 8),
+                          Icon(
+                            Icons.download_done_rounded,
+                            color: AppColors.success,
+                            size: 20,
+                          ),
+                        ],
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Stats content
+                    if (state.status == FlashCardStatsStatus.loading)
+                      const Center(
+                        child: Padding(
+                          padding: EdgeInsets.all(32),
+                          child: CircularProgressIndicator(),
+                        ),
+                      )
+                    else if (state.status == FlashCardStatsStatus.failure)
+                      _buildErrorState(context, state.errorMessage, textColor)
+                    else if (state.stats != null)
+                      _buildStatsContent(context, state.stats!, isDark, textColor),
+
+                    const SizedBox(height: 24),
+
+                    // Start Practice button for Registered users
+                      ElevatedButton(
+                        onPressed: canPractice
+                            ? () {
+                                Navigator.pop(context);
+                                context.push(
+                                  '/flashcards/$deckId',
+                                  extra: {'deckName': deckName},
+                                );
+                              }
+                            : null,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: canPractice ? AppColors.primary : Colors.grey,
+                          foregroundColor: Colors.white,
+                          padding: const EdgeInsets.symmetric(vertical: 16),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                        ),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            if (!canPractice) ...[
+                              const Icon(Icons.cloud_off, size: 20),
+                              const SizedBox(width: 8),
+                            ],
+                            Text(
+                              canPractice ? 'Start Practice' : 'Practice (Online Only)',
+                              style: const TextStyle(
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
+                  ],
                 ),
-                const SizedBox(height: 20),
-
-                // Title
-                Text(
-                  deckName,
-                  style: TextStyle(
-                    fontSize: 24,
-                    fontWeight: FontWeight.bold,
-                    color: textColor,
-                  ),
-                  textAlign: TextAlign.center,
-                ),
-                const SizedBox(height: 24),
-
-                // Stats content
-                if (state.status == FlashCardStatsStatus.loading)
-                  const Center(
-                    child: Padding(
-                      padding: EdgeInsets.all(32),
-                      child: CircularProgressIndicator(),
-                    ),
-                  )
-                else if (state.status == FlashCardStatsStatus.failure)
-                  _buildErrorState(context, state.errorMessage, textColor)
-                else if (state.stats != null)
-                  _buildStatsContent(context, state.stats!, isDark, textColor),
-
-                const SizedBox(height: 24),
-
-                // Start Practice button
-                ElevatedButton(
-                  onPressed: () {
-                    Navigator.pop(context);
-                    context.push(
-                      '/flashcards/$deckId',
-                      extra: {'deckName': deckName},
-                    );
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                  ),
-                  child: const Text(
-                    'Start Practice',
-                    style: TextStyle(
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-                SizedBox(height: MediaQuery.of(context).padding.bottom + 8),
-              ],
-            ),
+              );
+            },
           );
         },
       ),

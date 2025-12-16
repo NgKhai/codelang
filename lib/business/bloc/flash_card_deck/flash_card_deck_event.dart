@@ -11,6 +11,4 @@ class LoadFlashCardDecks extends FlashCardDeckEvent {
   const LoadFlashCardDecks();
 }
 
-class RefreshFlashCardDecks extends FlashCardDeckEvent {
-  const RefreshFlashCardDecks();
-}
+

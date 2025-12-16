@@ -4,6 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../../business/bloc/auth/auth_bloc.dart';
+import '../../../business/bloc/auth/auth_state.dart';
+import '../../../data/services/connectivity_service.dart';
+import '../../../data/models/flashcard/flash_card.dart';
+
 import '../../../business/bloc/flash_card/flash_card_bloc.dart';
 import '../../../business/bloc/flash_card/flash_card_event.dart';
 import '../../../business/bloc/flash_card/flash_card_state.dart';
@@ -15,16 +20,28 @@ import '../../../style/custom_app_bar.dart';
 class FlashCardScreen extends StatelessWidget {
   final String? deckId;
   final String? deckName;
+  /// Pre-loaded flash cards for offline mode (if provided, uses these instead of fetching)
+  final List<FlashCard>? flashCards;
 
-  const FlashCardScreen({super.key, this.deckId, this.deckName});
+  const FlashCardScreen({super.key, this.deckId, this.deckName, this.flashCards});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => FlashCardBloc(
-        flashCardService: FlashCardService(),
-        ttsService: TtsService(),
-      )..add(LoadFlashCards(deckId: deckId)),
+      create: (context) {
+        final bloc = FlashCardBloc(
+          flashCardService: FlashCardService(),
+          ttsService: TtsService(),
+        );
+        
+        if (flashCards != null && flashCards!.isNotEmpty) {
+           bloc.add(LoadOfflineFlashCards(flashCards: flashCards!));
+        } else {
+           bloc.add(LoadFlashCards(deckId: deckId));
+        }
+        
+        return bloc;
+      },
       child: _FlashCardView(deckId: deckId, deckName: deckName),
     );
   }
@@ -160,19 +177,7 @@ class _FlashCardViewState extends State<_FlashCardView> {
                         );
                       }
 
-                      return RefreshIndicator(
-                        onRefresh: () async {
-                          // Refresh with current deck only - fixed!
-                          context.read<FlashCardBloc>().add(
-                            LoadFlashCards(deckId: widget.deckId),
-                          );
-                          await context.read<FlashCardBloc>().stream.firstWhere(
-                                (state) => state.status == FlashCardStatus.success ||
-                                    state.status == FlashCardStatus.failure,
-                          );
-                        },
-                        color: AppColors.primary,
-                        child: ListView.builder(
+                       return ListView.builder(
                           controller: _scrollController,
                           itemCount: state.hasReachedMax
                               ? state.flashCards.length
@@ -187,12 +192,7 @@ class _FlashCardViewState extends State<_FlashCardView> {
                                   child: state.status == FlashCardStatus.loadingMore
                                       ? const CircularProgressIndicator(
                                           color: AppColors.primary)
-                                      : Text(
-                                          "Pull down to refresh",
-                                          style: TextStyle(
-                                            color: isDark ? Colors.white54 : Colors.grey,
-                                          ),
-                                        ),
+                                      : const SizedBox.shrink(), // Hiding "pull to refresh" text
                                 ),
                               );
                             }
@@ -201,8 +201,7 @@ class _FlashCardViewState extends State<_FlashCardView> {
                             // No rating callback - just viewing
                             return FlashCardWidget(entry: entry);
                           },
-                        ),
-                      );
+                        );
                   }
                 },
               ),
@@ -214,6 +213,11 @@ class _FlashCardViewState extends State<_FlashCardView> {
   }
 
   Widget _buildPracticeHeader(BuildContext context, bool isDark) {
+    // Check permission for practice
+    final authState = context.watch<AuthBloc>().state;
+    final isOnline = ConnectivityService().isOnline;
+    final canPractice = authState is AuthAuthenticated && isOnline;
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
@@ -255,26 +259,27 @@ class _FlashCardViewState extends State<_FlashCardView> {
               ],
             ),
           ),
-          ElevatedButton.icon(
-            onPressed: () {
-              if (widget.deckId != null) {
-                context.push(
-                  '/flashcards/${widget.deckId}/practice',
-                  extra: {'deckName': widget.deckName},
-                );
-              }
-            },
-            icon: const Icon(Icons.play_arrow_rounded),
-            label: const Text('Start Practice'),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+          if (canPractice)
+            ElevatedButton.icon(
+              onPressed: () {
+                if (widget.deckId != null) {
+                  context.push(
+                    '/flashcards/${widget.deckId}/practice',
+                    extra: {'deckName': widget.deckName},
+                  );
+                }
+              },
+              icon: const Icon(Icons.play_arrow_rounded),
+              label: const Text('Start Practice'),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
             ),
-          ),
         ],
       ),
     );

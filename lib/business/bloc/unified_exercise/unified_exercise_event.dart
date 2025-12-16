@@ -1,5 +1,6 @@
 import 'package:equatable/equatable.dart';
 import '../../../data/models/exercise/reorder_exercise.dart';
+import '../../../data/models/exercise/unified_exercise.dart';
 
 abstract class UnifiedExerciseEvent extends Equatable {
   const UnifiedExerciseEvent();
@@ -20,6 +21,16 @@ class LoadUnifiedExercises extends UnifiedExerciseEvent {
 
   @override
   List<Object?> get props => [count, exerciseSetId];
+}
+
+/// Event for loading pre-loaded exercises (offline mode)
+class LoadOfflineExercises extends UnifiedExerciseEvent {
+  final List<UnifiedExercise> exercises;
+
+  const LoadOfflineExercises({required this.exercises});
+
+  @override
+  List<Object?> get props => [exercises];
 }
 
 class CheckAnswer extends UnifiedExerciseEvent {}

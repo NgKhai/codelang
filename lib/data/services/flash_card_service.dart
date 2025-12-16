@@ -38,4 +38,13 @@ class FlashCardService {
   Future<int> getTotalCount() async {
     return await _apiService.getFlashCardsCount();
   }
+
+  /// Fetches flash cards by a list of IDs
+  Future<List<FlashCard>> fetchFlashCardsByIds(List<String> ids) async {
+    final flashCardsData = await _apiService.fetchFlashCardsByIds(ids);
+    
+    return flashCardsData
+        .map((data) => FlashCard.fromJson(data))
+        .toList();
+  }
 }

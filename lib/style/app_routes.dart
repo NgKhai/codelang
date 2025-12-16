@@ -11,4 +11,5 @@ class AppRoutes {
 
   // Sub Routes
   static const String subHome = '/sub-home';
+  static const String downloadedContent = '/downloaded-content';
 }

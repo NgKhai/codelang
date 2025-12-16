@@ -13,6 +13,7 @@ import 'unified_exercise_state.dart';
 class UnifiedExerciseBloc extends Bloc<UnifiedExerciseEvent, UnifiedExerciseState> {
   UnifiedExerciseBloc() : super(const UnifiedExerciseState()) {
     on<LoadUnifiedExercises>(_onLoadExercises);
+    on<LoadOfflineExercises>(_onLoadOfflineExercises);
     on<CheckAnswer>(_onCheckAnswer);
     on<NextExercise>(_onNextExercise);
     on<ResetCurrentExercise>(_onResetExercise);
@@ -29,6 +30,25 @@ class UnifiedExerciseBloc extends Bloc<UnifiedExerciseEvent, UnifiedExerciseStat
     // Fill Blank events
     on<UpdateAnswer>(_onUpdateAnswer);
     on<ShowAnswer>(_onShowAnswer);
+  }
+
+  /// Handler for loading pre-loaded exercises (offline mode)
+  Future<void> _onLoadOfflineExercises(
+    LoadOfflineExercises event,
+    Emitter<UnifiedExerciseState> emit,
+  ) async {
+    emit(state.copyWith(status: UnifiedExerciseStatus.loading));
+
+    if (event.exercises.isEmpty) {
+      emit(state.copyWith(
+        status: UnifiedExerciseStatus.loaded,
+        feedbackMessage: 'No exercises available.',
+        feedbackType: FeedbackType.error,
+      ));
+      return;
+    }
+
+    _loadExerciseAtIndex(0, event.exercises, emit);
   }
 
   Future<void> _onLoadExercises(LoadUnifiedExercises event, Emitter<UnifiedExerciseState> emit) async {

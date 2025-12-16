@@ -37,16 +37,4 @@ class UpdateCardProgress extends FlashCardStatsEvent {
   List<Object?> get props => [deckId, flashCardId, quality];
 }
 
-/// Reset stats (for refresh)
-class RefreshDeckStats extends FlashCardStatsEvent {
-  final String deckId;
-  final String deckName;
 
-  const RefreshDeckStats({
-    required this.deckId,
-    required this.deckName,
-  });
-
-  @override
-  List<Object?> get props => [deckId, deckName];
-}

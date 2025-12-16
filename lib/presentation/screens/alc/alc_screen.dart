@@ -4,9 +4,13 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_staggered_animations/flutter_staggered_animations.dart';
+import 'package:go_router/go_router.dart';
 import '../../../business/bloc/alc/alc_bloc.dart';
 import '../../../business/bloc/alc/alc_event.dart';
 import '../../../business/bloc/alc/alc_state.dart';
+import '../../../business/bloc/auth/auth_bloc.dart';
+import '../../../business/bloc/auth/auth_state.dart';
+import '../../../style/app_colors.dart';
 import '../../../style/app_sizes.dart';
 import '../../widgets/alc/alc_result_card.dart';
 
@@ -56,6 +60,13 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
   }
 
   void _analyzeText(BuildContext context) {
+    // Check if user is guest - show registration dialog
+    final authState = context.read<AuthBloc>().state;
+    if (!authState.canUseAlc) {
+      _showRegistrationDialog(context);
+      return;
+    }
+
     final bloc = context.read<AlcBloc>();
     bloc.add(
       AnalyzeText(
@@ -64,6 +75,60 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
       ),
     );
     _focusNode.unfocus();
+  }
+
+  void _showRegistrationDialog(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    
+    showDialog(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        backgroundColor: isDark ? const Color(0xFF2A2A2A) : Colors.white,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: Row(
+          children: [
+            Icon(Icons.auto_fix_high, color: AppColors.primary),
+            const SizedBox(width: 8),
+            const Text('Register Required'),
+          ],
+        ),
+        content: const Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'The Lingo Coach feature requires a registered account to use.',
+              style: TextStyle(fontSize: 14),
+            ),
+            SizedBox(height: 12),
+            Text(
+              'Create an account to:',
+              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 13),
+            ),
+            SizedBox(height: 8),
+            Text('• Use AI-powered text improvement', style: TextStyle(fontSize: 13)),
+            Text('• Save your learning progress', style: TextStyle(fontSize: 13)),
+            Text('• Sync across devices', style: TextStyle(fontSize: 13)),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(dialogContext).pop(),
+            child: const Text('Maybe Later'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.of(dialogContext).pop();
+              // Navigate to register screen
+              context.push('/register');
+            },
+            child: const Text('Register Now'),
+          ),
+        ],
+      ),
+    );
   }
 
   void _clearInput(BuildContext context) {
@@ -80,6 +145,8 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
+    final authState = context.watch<AuthBloc>().state;
+    final isGuest = authState is AuthGuest || authState is AuthOffline;
 
     return Scaffold(
       backgroundColor: colorScheme.surface,
@@ -113,6 +180,24 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
                           color: colorScheme.onSurface,
                         ),
                       ),
+                      if (isGuest) ...[
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: AppColors.warning.withOpacity(0.2),
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: Text(
+                            'Registered Only',
+                            style: TextStyle(
+                              fontSize: 9,
+                              color: AppColors.warning,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                      ],
                     ],
                   ),
                   Text(
@@ -127,6 +212,50 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
               ),
             ),
           ),
+
+          // Guest Banner
+          if (isGuest)
+            SliverToBoxAdapter(
+              child: Container(
+                margin: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.1),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.3)),
+                ),
+                child: Row(
+                  children: [
+                    Icon(Icons.info_outline, color: AppColors.warning, size: 20),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        'Register for free to use Lingo Coach',
+                        style: TextStyle(
+                          color: AppColors.warning,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: () => context.push('/register'),
+                      style: TextButton.styleFrom(
+                        padding: const EdgeInsets.symmetric(horizontal: 12),
+                        minimumSize: Size.zero,
+                      ),
+                      child: Text(
+                        'Sign Up',
+                        style: TextStyle(
+                          color: AppColors.warning,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Content
           SliverPadding(
@@ -248,15 +377,16 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
               horizontal: AppSizes.p16,
               vertical: AppSizes.p8,
             ),
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                ValueListenableBuilder<TextEditingValue>(
-                  valueListenable: _textController,
-                  builder: (context, value, child) {
-                    final count = value.text.length;
-                    final isOverLimit = count > 5000;
-                    return Text(
+            child: ValueListenableBuilder<TextEditingValue>(
+              valueListenable: _textController,
+              builder: (context, value, child) {
+                final count = value.text.length;
+                final isOverLimit = count > 5000;
+
+                return Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Text(
                       '$count / 5000',
                       style: TextStyle(
                         fontSize: 12,
@@ -264,29 +394,30 @@ class _AlcScreenContentState extends State<_AlcScreenContent> {
                             ? colorScheme.error
                             : colorScheme.onSurfaceVariant.withOpacity(0.6),
                       ),
-                    );
-                  },
-                ),
-                TextButton(
-                  onPressed: () => _clearInput(context),
-                  style: TextButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 4,
                     ),
-                    minimumSize: Size.zero,
-                    tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Text(
-                    'Clear',
-                    style: TextStyle(
-                      fontSize: 13,
-                      color: colorScheme.primary,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ),
-              ],
+                    if (value.text.isNotEmpty)
+                      TextButton(
+                        onPressed: () => _clearInput(context),
+                        style: TextButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 4,
+                          ),
+                          minimumSize: Size.zero,
+                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                        ),
+                        child: Text(
+                          'Clear',
+                          style: TextStyle(
+                            fontSize: 13,
+                            color: colorScheme.primary,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+                      ),
+                  ],
+                );
+              },
             ),
           ),
         ],

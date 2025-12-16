@@ -87,25 +87,47 @@ class TtsService {
     }
   }
 
+  /// Safe wrapper for TTS calls to handle "not bound" errors
+  Future<void> _safeTtsExecution(Future<void> Function() action) async {
+    // Ensure initialized before speaking
+    if (!_isInitialized) {
+      await initialize();
+      await Future.delayed(const Duration(milliseconds: 200));
+    }
+
+    // Stop any ongoing speech first
+    await stop();
+
+    try {
+      await action();
+    } catch (e) {
+      final error = e.toString();
+      print("TTS Error: $error");
+      
+      // Check for binding error
+      if (error.contains("not bound")) {
+        print("TTS Engine unbound. Re-initializing...");
+        _isInitialized = false;
+        await initialize();
+        await Future.delayed(const Duration(milliseconds: 200));
+        
+        try {
+          // Retry once
+          await action(); 
+        } catch (retryError) {
+          print("TTS Retry failed: $retryError");
+        }
+      }
+    }
+  }
+
   /// Speak a single word
   Future<void> speak(String word) async {
     if (word.isEmpty) return;
 
-    // Ensure initialized before speaking
-    if (!_isInitialized) {
-      await initialize();
-      // Small delay to let engine stabilize
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
-
-    // Stop any ongoing speech
-    await stop();
-
-    try {
+    await _safeTtsExecution(() async {
       await _flutterTts.speak(word);
-    } catch (e) {
-      print("TTS speak error: $e");
-    }
+    });
   }
 
   /// Speak a word with custom settings
@@ -118,15 +140,7 @@ class TtsService {
   }) async {
     if (word.isEmpty) return;
 
-    // Ensure initialized before speaking
-    if (!_isInitialized) {
-      await initialize();
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
-
-    await stop();
-
-    try {
+    await _safeTtsExecution(() async {
       // Apply custom settings if provided
       if (language != null) await _flutterTts.setLanguage(language);
       if (speechRate != null) await _flutterTts.setSpeechRate(speechRate);
@@ -134,28 +148,16 @@ class TtsService {
       if (volume != null) await _flutterTts.setVolume(volume);
 
       await _flutterTts.speak(word);
-    } catch (e) {
-      print("TTS speakWithSettings error: $e");
-    }
+    });
   }
 
   /// Speak a sentence or phrase
   Future<void> speakSentence(String sentence) async {
     if (sentence.isEmpty) return;
 
-    // Ensure initialized before speaking
-    if (!_isInitialized) {
-      await initialize();
-      await Future.delayed(const Duration(milliseconds: 200));
-    }
-
-    await stop();
-    
-    try {
+    await _safeTtsExecution(() async {
       await _flutterTts.speak(sentence);
-    } catch (e) {
-      print("TTS speakSentence error: $e");
-    }
+    });
   }
 
   /// Stop current speech
@@ -163,7 +165,10 @@ class TtsService {
     try {
       await _flutterTts.stop();
     } catch (e) {
-      print("TTS stop error: $e");
+      // Ignore "not bound" error when stopping
+      if (!e.toString().contains("not bound")) {
+        print("TTS stop error: $e");
+      }
     }
     _ttsState = TtsState.stopped;
   }

@@ -47,6 +47,10 @@ dependencies:
   jwt_decoder: ^2.0.1
   crypto: ^3.0.7
   flutter_staggered_animations: ^1.1.1
+  # Offline storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  connectivity_plus: ^5.0.2
 
 dev_dependencies:
   flutter_test:

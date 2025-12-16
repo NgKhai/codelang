@@ -18,6 +18,26 @@ class AuthBloc extends Bloc<AuthEvent, AuthState> {
     on<AuthCompleteStreakRequested>(_onAuthCompleteStreakRequested);
     on<AuthCompleteCourseRequested>(_onAuthCompleteCourseRequested);
     on<AuthRefreshRequested>(_onAuthRefreshRequested);
+    on<AuthGuestRequested>(_onAuthGuestRequested);
+    on<AuthOfflineRequested>(_onAuthOfflineRequested);
+  }
+
+  /// Handle guest login - no account required
+  Future<void> _onAuthGuestRequested(
+    AuthGuestRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('👤 Guest mode requested');
+    emit(const AuthGuest());
+  }
+
+  /// Handle offline mode - use downloaded content only
+  Future<void> _onAuthOfflineRequested(
+    AuthOfflineRequested event,
+    Emitter<AuthState> emit,
+  ) async {
+    print('📴 Offline mode requested');
+    emit(const AuthOffline());
   }
     
   Future<void> _onAuthRefreshRequested(

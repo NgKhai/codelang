@@ -8,9 +8,13 @@ import 'package:go_router/go_router.dart';
 
 import 'business/bloc/auth/auth_bloc.dart';
 import 'business/bloc/auth/auth_event.dart';
+import 'business/bloc/offline/offline_bloc.dart';
+import 'business/bloc/offline/offline_event.dart';
 import 'business/cubit/theme_cubit.dart';
 import 'data/repositories/auth_repository.dart';
+import 'data/services/connectivity_service.dart';
 import 'data/services/mongo_service.dart';
+import 'data/services/offline_storage_service.dart';
 import 'data/services/theme_service.dart';
 
 void main() async {
@@ -19,6 +23,12 @@ void main() async {
 
   // Load environment variables
   await dotenv.load(fileName: ".env");
+
+  // Initialize Hive for offline storage
+  await OfflineStorageService.initialize();
+
+  // Initialize connectivity monitoring
+  await ConnectivityService().initialize();
 
   // Initialize MongoDB connection
   try {
@@ -87,6 +97,10 @@ class MyApp extends StatelessWidget {
             create: (context) => AuthBloc(
               authRepository: context.read<AuthRepository>(),
             )..add(AuthCheckRequested()),
+          ),
+          // Offline Bloc - managing downloaded content
+          BlocProvider(
+            create: (context) => OfflineBloc()..add(const LoadDownloadedContent()),
           ),
         ],
         child: const AppView(),

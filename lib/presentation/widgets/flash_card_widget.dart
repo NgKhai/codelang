@@ -75,28 +75,21 @@ class FlashCardWidget extends StatelessWidget {
                       width: double.infinity,
                       fit: BoxFit.cover,
                       errorBuilder: (context, error, stackTrace) {
-                        return Container(
+                        return Image.asset(
+                          'assets/images/codelang.png',
                           height: calculatedImageHeight,
-                          color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F5),
-                          child: Center(
-                            child: Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(
-                                  Icons.image_not_supported_outlined,
-                                  size: 48,
-                                  color: theme.colorScheme.onSurfaceVariant,
-                                ),
-                                const SizedBox(height: 8),
-                                Text(
-                                  'Image Unavailable',
-                                  style: TextStyle(
-                                    color: theme.colorScheme.onSurfaceVariant,
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ),
+                          width: double.infinity,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            // Absolute fallback if asset also fails
+                            return Container(
+                              height: calculatedImageHeight,
+                              color: isDark ? const Color(0xFF2C2C2C) : const Color(0xFFF0F2F5),
+                              child: const Center(
+                                child: Icon(Icons.image_not_supported_outlined, size: 48),
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -136,11 +129,23 @@ class FlashCardWidget extends StatelessWidget {
                             children: [
                               Text(
                                 entry.flashCardWord,
-                                style: const TextStyle(
+                                style: TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.w800,
                                   color: Colors.white,
                                   height: 1.1,
+                                  shadows: [
+                                    Shadow(
+                                      offset: const Offset(0, 2),
+                                      blurRadius: 4.0,
+                                      color: Colors.black.withOpacity(0.8),
+                                    ),
+                                    Shadow(
+                                      offset: const Offset(0, 1),
+                                      blurRadius: 8.0,
+                                      color: Colors.black.withOpacity(0.5),
+                                    ),
+                                  ],
                                 ),
                               ),
                               const SizedBox(height: 4),
@@ -157,10 +162,17 @@ class FlashCardWidget extends StatelessWidget {
                                     ),
                                     child: Text(
                                       entry.flashCardPartOfSpeech,
-                                      style: const TextStyle(
+                                      style: TextStyle(
                                         fontSize: 14,
                                         fontWeight: FontWeight.w600,
                                         color: Colors.white,
+                                        shadows: [
+                                          Shadow(
+                                            offset: const Offset(0, 1),
+                                            blurRadius: 2.0,
+                                            color: Colors.black.withOpacity(0.6),
+                                          ),
+                                        ],
                                       ),
                                     ),
                                   ),
@@ -170,7 +182,14 @@ class FlashCardWidget extends StatelessWidget {
                                     style: TextStyle(
                                       fontSize: 16,
                                       fontWeight: FontWeight.w500,
-                                      color: Colors.white.withOpacity(0.9),
+                                      color: Colors.white.withOpacity(0.95),
+                                      shadows: [
+                                        Shadow(
+                                          offset: const Offset(0, 1),
+                                          blurRadius: 3.0,
+                                          color: Colors.black.withOpacity(0.8),
+                                        ),
+                                      ],
                                     ),
                                   ),
                                 ],

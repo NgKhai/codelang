@@ -60,3 +60,13 @@ class AuthCompleteCourseRequested extends AuthEvent {
   @override
   List<Object?> get props => [courseId];
 }
+
+/// Event to continue as guest (no account)
+class AuthGuestRequested extends AuthEvent {
+  const AuthGuestRequested();
+}
+
+/// Event to enter offline mode (uses downloaded content only)
+class AuthOfflineRequested extends AuthEvent {
+  const AuthOfflineRequested();
+}

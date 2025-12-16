@@ -18,7 +18,6 @@ class FlashCardStatsBloc
   FlashCardStatsBloc() : super(const FlashCardStatsState()) {
     on<LoadDeckStats>(_onLoadDeckStats);
     on<UpdateCardProgress>(_onUpdateCardProgress);
-    on<RefreshDeckStats>(_onRefreshDeckStats);
   }
 
   Future<String?> _getUserId() async {
@@ -127,10 +126,5 @@ class FlashCardStatsBloc
     }
   }
 
-  Future<void> _onRefreshDeckStats(
-    RefreshDeckStats event,
-    Emitter<FlashCardStatsState> emit,
-  ) async {
-    add(LoadDeckStats(deckId: event.deckId, deckName: event.deckName));
-  }
+
 }

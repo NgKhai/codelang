@@ -18,10 +18,29 @@ class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
   }) : deckService = deckService ?? FlashCardDeckService(),
        super(const FlashCardState()) {
     on<LoadFlashCards>(_onLoadFlashCards);
+    on<LoadOfflineFlashCards>(_onLoadOfflineFlashCards);
     on<LoadMoreFlashCards>(_onLoadMoreFlashCards);
-    on<RefreshFlashCards>(_onRefreshFlashCards);
     on<SpeakFlashCardWord>(_onSpeakFlashCardWord);
     on<StopSpeaking>(_onStopSpeaking);
+  }
+
+  /// Handler for loading pre-loaded flash cards (offline/view mode)
+  Future<void> _onLoadOfflineFlashCards(
+    LoadOfflineFlashCards event,
+    Emitter<FlashCardState> emit,
+  ) async {
+    emit(state.copyWith(status: FlashCardStatus.loading));
+
+    var flashCards = event.flashCards;
+    if (event.shuffle) {
+      flashCards = List.of(flashCards)..shuffle();
+    }
+
+    emit(state.copyWith(
+      status: FlashCardStatus.success,
+      flashCards: flashCards,
+      hasReachedMax: true,
+    ));
   }
 
   /// Handles initial loading of flash cards
@@ -92,30 +111,7 @@ class FlashCardBloc extends Bloc<FlashCardEvent, FlashCardState> {
     }
   }
 
-  /// Handles refreshing the flash card list
-  Future<void> _onRefreshFlashCards(
-      RefreshFlashCards event,
-      Emitter<FlashCardState> emit,
-      ) async {
-    // Reset to initial state before loading
-    emit(const FlashCardState(status: FlashCardStatus.loading));
 
-    try {
-      final flashCards = await flashCardService.fetchFlashCards(page: 0);
-
-      emit(FlashCardState(
-        status: FlashCardStatus.success,
-        flashCards: flashCards,
-        currentPage: 0,
-        hasReachedMax: flashCards.isEmpty,
-      ));
-    } catch (error) {
-      emit(FlashCardState(
-        status: FlashCardStatus.failure,
-        errorMessage: error.toString(),
-      ));
-    }
-  }
 
   /// Handles speaking a flash card word
   Future<void> _onSpeakFlashCardWord(

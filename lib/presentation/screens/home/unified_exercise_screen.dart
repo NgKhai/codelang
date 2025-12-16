@@ -18,14 +18,24 @@ import '../../widgets/unified_exercise/fill_blank_exercise_widget.dart';
 
 class UnifiedExerciseScreen extends StatelessWidget {
   final String? exerciseSetId;
+  /// Pre-loaded exercises for offline mode (if provided, uses these instead of fetching)
+  final List<UnifiedExercise>? exercises;
 
-  const UnifiedExerciseScreen({super.key, this.exerciseSetId});
+  const UnifiedExerciseScreen({super.key, this.exerciseSetId, this.exercises});
 
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (context) => UnifiedExerciseBloc()
-        ..add(LoadUnifiedExercises(count: 10, exerciseSetId: exerciseSetId)),
+      create: (context) {
+        final bloc = UnifiedExerciseBloc();
+        // If exercises are provided, use offline mode; otherwise fetch from API
+        if (exercises != null && exercises!.isNotEmpty) {
+          bloc.add(LoadOfflineExercises(exercises: exercises!));
+        } else {
+          bloc.add(LoadUnifiedExercises(count: 10, exerciseSetId: exerciseSetId));
+        }
+        return bloc;
+      },
       child: _UnifiedExerciseView(exerciseSetId: exerciseSetId),
     );
   }

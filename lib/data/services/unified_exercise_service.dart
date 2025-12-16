@@ -18,7 +18,7 @@ class UnifiedExerciseService {
     final List<Course> courses = [];
 
     for (final courseData in coursesData) {
-      final exercises = _parseExercises(courseData['exercises'] as List);
+      final exercises = parseExercises(courseData['exercises'] as List);
       courses.add(Course(
         id: courseData['id'] as String,
         name: courseData['name'] as String,
@@ -29,14 +29,15 @@ class UnifiedExerciseService {
     return courses;
   }
 
-  // Helper to parse exercises from API response
-  static List<UnifiedExercise> _parseExercises(List exercisesData) {
+  // Helper to parse exercises from API response or stored JSON
+  // Made public for offline course parsing
+  static List<UnifiedExercise> parseExercises(List exercisesData) {
     final List<UnifiedExercise> exercises = [];
     
     for (final exerciseData in exercisesData) {
-      final type = exerciseData['type'] as String;
-      final id = exerciseData['id'] as String;
-      final data = exerciseData['data'] as Map<String, dynamic>;
+      final type = exerciseData['type']?.toString() ?? '';
+      final id = exerciseData['id']?.toString() ?? '';
+      final data = Map<String, dynamic>.from((exerciseData['data'] as Map?) ?? {});
       
       switch (type) {
         case 'reorder':
@@ -63,19 +64,79 @@ class UnifiedExerciseService {
     return exercises;
   }
 
+  // Helper to serialize exercises for offline storage
+  static List<Map<String, dynamic>> serializeExercises(List<UnifiedExercise> exercises) {
+    return exercises.map((e) {
+      String typeStr = '';
+      Map<String, dynamic> data = {};
+
+      switch (e.type) {
+        case ExerciseType.reorder:
+          typeStr = 'reorder';
+          if (e.reorderExercise != null) {
+            data = {
+              'prompt': e.reorderExercise!.prompt,
+              'sourceSentence': e.reorderExercise!.sourceSentence,
+              'correctOrder': e.reorderExercise!.correctOrder,
+              'practiceType': e.reorderExercise!.practiceType,
+            };
+          }
+          break;
+        case ExerciseType.multipleChoice:
+          typeStr = 'multiple_choice';
+          if (e.multipleChoiceExercise != null) {
+            data = {
+              'prompt': e.multipleChoiceExercise!.prompt,
+              'sentence': e.multipleChoiceExercise!.sentence,
+              'blankWord': e.multipleChoiceExercise!.blankWord,
+              'blankPosition': e.multipleChoiceExercise!.blankPosition,
+              'options': e.multipleChoiceExercise!.options,
+              'correctOptionIndex': e.multipleChoiceExercise!.correctOptionIndex,
+              'imageUrl': e.multipleChoiceExercise!.imageUrl,
+              'definition': e.multipleChoiceExercise!.definition,
+              'practiceType': e.multipleChoiceExercise!.practiceType,
+            };
+          }
+          break;
+        case ExerciseType.fillBlank:
+          typeStr = 'fill_blank';
+          if (e.fillBlankExercise != null) {
+            data = {
+              'prompt': e.fillBlankExercise!.prompt,
+              'sentence': e.fillBlankExercise!.sentence,
+              'correctAnswer': e.fillBlankExercise!.correctAnswer,
+              'blankPosition': e.fillBlankExercise!.blankPosition,
+              'imageUrl': e.fillBlankExercise!.imageUrl,
+              'definition': e.fillBlankExercise!.definition,
+              'wordType': e.fillBlankExercise!.wordType,
+              'hint': e.fillBlankExercise!.hint,
+              'acceptableAnswers': e.fillBlankExercise!.acceptableAnswers,
+            };
+          }
+          break;
+      }
+
+      return {
+        'id': e.id,
+        'type': typeStr,
+        'data': data,
+      };
+    }).toList();
+  }
+
   // Get exercises for a specific exercise set
   static Future<List<UnifiedExercise>> getExercisesBySetId(String setId) async {
     final setData = await _apiService.fetchExerciseSetById(setId);
     if (setData == null) {
       throw Exception('Exercise set not found: $setId');
     }
-    return _parseExercises(setData['exercises'] as List);
+    return parseExercises(setData['exercises'] as List);
   }
 
   // Get random exercises
   static Future<List<UnifiedExercise>> getRandomExercises({int count = 10}) async {
     final exercisesData = await _apiService.fetchRandomExercises(count: count);
-    return _parseExercises(exercisesData);
+    return parseExercises(exercisesData);
   }
 
   // Get all available exercises from all types (for random practice)

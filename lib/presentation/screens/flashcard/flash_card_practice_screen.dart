@@ -1,3 +1,4 @@
+import 'package:codelang/data/models/flashcard/flash_card.dart';
 import 'package:codelang/data/services/flash_card_service.dart';
 import 'package:codelang/presentation/widgets/flash_card_widget.dart';
 import 'package:flutter/material.dart';
