@@ -472,8 +472,8 @@ class ApiService {
         Uri.parse('$baseUrl/progress/card/$flashCardId'),
         headers: _getHeaders(requiresAuth: true, token: token),
         body: jsonEncode({
-          'deckId': deckId,
           ...progressData,
+          'deckId': deckId,
         }),
       ),
     );

@@ -4,14 +4,14 @@ import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 import '../../../data/models/flashcard/deck_statistics.dart';
 import '../../../data/models/flashcard/sm2_algorithm.dart';
 import '../../../data/models/flashcard/user_flashcard_progress.dart';
+import '../../../data/services/api_service.dart';
 import '../../../data/services/flash_card_deck_service.dart';
-import '../../../data/services/mongo_service.dart';
 import 'flash_card_stats_event.dart';
 import 'flash_card_stats_state.dart';
 
 class FlashCardStatsBloc
     extends Bloc<FlashCardStatsEvent, FlashCardStatsState> {
-  final MongoService _mongoService = MongoService.instance;
+  final ApiService _apiService = ApiService.instance;
   final FlashCardDeckService _deckService = FlashCardDeckService();
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
 
@@ -51,8 +51,7 @@ class FlashCardStatsBloc
       }
 
       // Get aggregated stats
-      final statsMap = await _mongoService.getDeckProgressStats(
-        userId: userId,
+      final statsMap = await _apiService.getDeckProgressStats(
         deckId: event.deckId,
         totalCards: deck.cardCount,
       );
@@ -89,21 +88,28 @@ class FlashCardStatsBloc
       if (userId == null) return;
 
       // Get current progress or create initial
-      final existingData = await _mongoService.getCardProgress(
-        userId: userId,
-        flashCardId: event.flashCardId,
-      );
-
+      // ApiService getCardProgress might throw or return empty if not found, 
+      // but let's assume it typically returns existing progress logic from backend.
+      // However, frontend SM2 calculation needs the 'previous' state.
+      // Let's rely on backend returning the progress object if it exists.
+      
       UserFlashCardProgress currentProgress;
-      if (existingData != null) {
+      try {
+        final existingData = await _apiService.getCardProgress(
+          flashCardId: event.flashCardId,
+        );
         currentProgress = UserFlashCardProgress.fromJson(existingData);
-      } else {
+      } catch (e) {
+        // Assume not found / new card
         currentProgress = UserFlashCardProgress.initial(
           odUserId: userId,
           deckId: event.deckId,
           flashCardId: event.flashCardId,
         );
       }
+
+      // Ensure specific deckId is set (fetched data might miss it)
+      currentProgress = currentProgress.copyWith(deckId: event.deckId);
 
       // Apply SM-2 algorithm
       final updatedProgress = SM2Algorithm.calculateNextReview(
@@ -112,8 +118,7 @@ class FlashCardStatsBloc
       );
 
       // Save to database
-      await _mongoService.upsertCardProgress(
-        userId: userId,
+      await _apiService.upsertCardProgress(
         deckId: event.deckId,
         flashCardId: event.flashCardId,
         progressData: updatedProgress.toJson(),
@@ -125,6 +130,4 @@ class FlashCardStatsBloc
       print('Update card progress error: $e');
     }
   }
-
-
 }
