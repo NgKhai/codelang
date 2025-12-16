@@ -2,7 +2,9 @@
 
 **CodeLang** is a specialized cross-platform application (Mobile/Web) designed to enhance technical English proficiency for developers. It helps users learn and practice English vocabulary and concepts specifically tailored for the software development industry.
 
-<img src="https://github.com/user-attachments/assets/5c8c1f18-8b3c-48c9-aa14-f34cc3097a83"/>
+<img src="https://github.com/user-attachments/assets/bf21251c-05c0-4567-a585-0354f3a7a37d"/>
+<img src="https://github.com/user-attachments/assets/8c862053-97f8-4d5e-a720-aecb03211ab8"/>
+<img src="https://github.com/user-attachments/assets/22616abd-9d71-4edf-a50f-1660788807f4"/>
 
 ## ✨ Features
 
