@@ -249,7 +249,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                              : const Text(
+                              : Text(
                             'Sign In',
                             style: AppStyles.buttonText,
                           ),

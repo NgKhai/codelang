@@ -245,7 +245,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               strokeWidth: 2,
                             ),
                           )
-                              : const Text(
+                              : Text(
                             'Sign Up',
                             style: AppStyles.buttonText,
                           ),

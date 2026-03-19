@@ -1,9 +1,8 @@
-// lib/presentation/widgets/alc/alc_result_card.dart
-// Widget for displaying ALC analysis results
-
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import '../../../data/models/alc/alc_result.dart';
+import '../../../style/app_colors.dart';
 import '../../../style/app_sizes.dart';
 import 'score_indicator.dart';
 
@@ -56,15 +55,25 @@ class AlcResultCard extends StatelessWidget {
   }
 
   Widget _buildScoresSection(BuildContext context) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
-    return Container(
-      padding: const EdgeInsets.all(AppSizes.p16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-      ),
-      child: Column(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          padding: const EdgeInsets.all(AppSizes.p16),
+          decoration: BoxDecoration(
+            color: (isDark ? AppColors.surfaceDark : AppColors.surfaceLight).withAlpha(150),
+            borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+            border: Border.all(
+              color: isDark ? Colors.white.withAlpha(25) : Colors.white.withAlpha(120),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
         children: [
           // Detected Language & Severity badges
           Wrap(
@@ -115,6 +124,8 @@ class AlcResultCard extends StatelessWidget {
             ],
           ),
         ],
+      ),
+        ),
       ),
     );
   }
@@ -174,16 +185,26 @@ class AlcResultCard extends StatelessWidget {
     required String title,
     required String content,
   }) {
-    final colorScheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final isDark = theme.brightness == Brightness.dark;
+    final colorScheme = theme.colorScheme;
 
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(AppSizes.p16),
-      decoration: BoxDecoration(
-        color: colorScheme.surfaceContainerLow,
-        borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
-      ),
-      child: Column(
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+      child: BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(AppSizes.p16),
+          decoration: BoxDecoration(
+            color: (isDark ? AppColors.surfaceDark : AppColors.surfaceLight).withAlpha(150),
+            borderRadius: BorderRadius.circular(AppSizes.radiusLarge),
+            border: Border.all(
+              color: isDark ? Colors.white.withAlpha(25) : Colors.white.withAlpha(120),
+              width: 1.5,
+            ),
+          ),
+          child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
@@ -204,6 +225,8 @@ class AlcResultCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+        ),
       ),
     );
   }

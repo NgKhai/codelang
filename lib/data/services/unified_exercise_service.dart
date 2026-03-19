@@ -1,7 +1,6 @@
 // lib/data/services/unified_exercise_service.dart
 // Updated to use REST API instead of direct MongoDB
 
-import 'dart:math';
 import '../models/course/course.dart';
 import '../models/exercise/unified_exercise.dart';
 import '../models/exercise/reorder_exercise.dart';

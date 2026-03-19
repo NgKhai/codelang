@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
@@ -9,7 +10,6 @@ import '../../../business/bloc/offline/offline_bloc.dart';
 import '../../../business/bloc/offline/offline_event.dart';
 import '../../../business/bloc/offline/offline_state.dart';
 import '../../../data/models/course/course.dart';
-import '../../../data/models/exercise/unified_exercise.dart';
 import '../../../data/models/offline/offline_course.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/unified_exercise_service.dart';
@@ -61,8 +61,8 @@ class _HomeScreenState extends State<HomeScreen>
 
     // Matching ProfileScreen colors for consistency
     final backgroundColor = isDark
-        ? const Color(0xFF121212)
-        : const Color(0xFFF5F7FA);
+        ? AppColors.backgroundDark
+        : AppColors.backgroundLight;
 
     final authState = context.watch<AuthBloc>().state;
     final isOfflineMode = authState is AuthOffline || !ConnectivityService().isOnline;
@@ -298,8 +298,8 @@ class _HomeScreenState extends State<HomeScreen>
   }
 
   Widget _buildDailyChallengeCard(BuildContext context, bool isDark) {
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
+    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     return BlocBuilder<AuthBloc, AuthState>(
       builder: (context, authState) {
@@ -329,17 +329,21 @@ class _HomeScreenState extends State<HomeScreen>
             builder: (context, value, child) {
               return Transform.scale(scale: value, child: child);
             },
-            child: Container(
-              padding: const EdgeInsets.all(24),
-              decoration: BoxDecoration(
-                color: cardColor,
-                borderRadius: BorderRadius.circular(24),
-                border: Border.all(
-                  color: isDark ? Colors.white10 : Colors.grey.shade200,
-                  width: 1,
-                ),
-              ),
-              child: Row(
+            child: ClipRRect(
+              borderRadius: BorderRadius.circular(24),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+                child: Container(
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: cardColor.withAlpha(isDark ? 150 : 180),
+                    borderRadius: BorderRadius.circular(24),
+                    border: Border.all(
+                      color: isDark ? Colors.white.withAlpha(25) : Colors.white.withAlpha(120),
+                      width: 1.5,
+                    ),
+                  ),
+                  child: Row(
                 children: [
                   Expanded(
                     child: Column(
@@ -439,6 +443,8 @@ class _HomeScreenState extends State<HomeScreen>
               ),
             ),
           ),
+            ),
+          ),
         );
       },
     );
@@ -450,8 +456,8 @@ class _HomeScreenState extends State<HomeScreen>
     int index,
     bool isDark,
   ) {
-    final cardColor = isDark ? const Color(0xFF1E1E1E) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF2D3436);
+    final cardColor = isDark ? AppColors.surfaceDark : AppColors.surfaceLight;
+    final textColor = isDark ? AppColors.textPrimaryDark : AppColors.textPrimary;
 
     final colors = [
       AppColors.primary,

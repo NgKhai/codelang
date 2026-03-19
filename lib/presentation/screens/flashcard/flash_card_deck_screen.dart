@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:go_router/go_router.dart';
 
 import '../../../business/bloc/auth/auth_bloc.dart';
 import '../../../business/bloc/auth/auth_state.dart';
@@ -11,7 +10,6 @@ import '../../../business/bloc/offline/offline_bloc.dart';
 import '../../../business/bloc/offline/offline_event.dart';
 import '../../../business/bloc/offline/offline_state.dart';
 import '../../../data/models/flashcard/flash_card_deck.dart';
-import '../../../data/models/offline/offline_flash_card_deck.dart';
 import '../../../data/services/connectivity_service.dart';
 import '../../../data/services/flash_card_service.dart';
 import '../../../style/app_colors.dart';

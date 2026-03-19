@@ -1,6 +1,7 @@
 import 'package:codelang/style/app_router.dart';
 import 'package:codelang/style/app_themes.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:flutter_dotenv/flutter_dotenv.dart';
 import 'package:go_router/go_router.dart';
@@ -18,6 +19,9 @@ import 'data/services/theme_service.dart';
 void main() async {
 
   WidgetsFlutterBinding.ensureInitialized();
+
+
+  SystemChrome.setPreferredOrientations([DeviceOrientation.portraitUp]);
 
   // Load environment variables
   await dotenv.load(fileName: ".env");

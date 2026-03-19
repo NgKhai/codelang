@@ -134,7 +134,7 @@ class ExerciseBottomBar extends StatelessWidget {
                   )
                       : ElevatedButton.icon(
                     icon: const Icon(Icons.check_rounded),
-                    label: const Text(
+                    label: Text(
                       'Check Answer',
                       style: AppStyles.buttonText,
                     ),

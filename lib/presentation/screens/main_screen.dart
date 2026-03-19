@@ -211,7 +211,6 @@ class _NavBarItem extends StatelessWidget {
   final VoidCallback onTap;
 
   const _NavBarItem({
-    super.key,
     required this.icon,
     required this.isSelected,
     required this.onTap,
